@@ -1,0 +1,93 @@
+@inject NavigationManager NavigationManager
+
+<div class="sidebar">
+    <div class="sidebar-dropdown"><a href="#">Navigation</a></div>
+
+    <ul id="nav">
+        <!-- Dashboard -->
+        <li class="@GetOpenClass("/admin", exact: true)">
+            <a href="/admin"><i class="fa fa-home"></i> Dashboard</a>
+        </li>
+
+        <!-- Orders -->
+        <li class="has_sub @GetSubClass("/admin/orders")">
+            <a href="javascript:void(0)">
+                <i class="fa fa-shopping-cart"></i> Orders
+                <span class="pull-right"><i class="fa fa-chevron-right"></i></span>
+            </a>
+            <ul>
+                <li class="@GetItemClass("/admin/orders", exact: true)">
+                    <a href="/admin/orders">All Orders</a>
+                </li>
+                <li class="@GetItemClass("/admin/orders/pending", exact: true)">
+                    <a href="/admin/orders/pending">Pending</a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Menu Management -->
+        <li class="has_sub @GetSubClass("/admin/products", "/admin/categories")">
+            <a href="javascript:void(0)">
+                <i class="fa fa-list-alt"></i> Menu
+                <span class="pull-right"><i class="fa fa-chevron-right"></i></span>
+            </a>
+            <ul>
+                <li class="@GetItemClass("/admin/products", exact: true)">
+                    <a href="/admin/products">Products</a>
+                </li>
+                <li class="@GetItemClass("/admin/categories", exact: true)">
+                    <a href="/admin/categories">Categories</a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Users -->
+        <li class="@GetOpenClass("/admin/users", exact: true)">
+            <a href="/admin/users">
+                <i class="fa fa-users"></i> Users
+            </a>
+        </li>
+    </ul>
+</div>
+
+@code {
+    private string GetRelativePath()
+    {
+        var baseUri = NavigationManager.BaseUri.TrimEnd('/');
+        var fullUri = NavigationManager.Uri.Split('?')[0].TrimEnd('/');
+        return fullUri.Length >= baseUri.Length
+            ? fullUri[baseUri.Length..]
+            : string.Empty;
+    }
+
+    // For top-level items with NO sub-menu: returns "open" (triggers CSS blue highlight)
+    private string GetOpenClass(string href, bool exact)
+    {
+        var path = GetRelativePath();
+        var hrefTrimmed = href.TrimEnd("");
+        bool active = exact
+            ? path.Equals(hrefTrimmed, StringComparison.OrdinalIgnoreCase)
+            : path.StartsWith(hrefTrimmed, StringComparison.OrdinalIgnoreCase);
+        return active ? "open" : "";
+    }
+
+    // For nested sub-menu items: returns "current" (triggers CSS nested highlight)
+    private string GetItemClass(string href, bool exact)
+    {
+        var path = GetRelativePath();
+        var hrefTrimmed = href.TrimEnd('/');
+        bool active = exact
+            ? path.Equals(hrefTrimmed, StringComparison.OrdinalIgnoreCase)
+            : path.StartsWith(hrefTrimmed, StringComparison.OrdinalIgnoreCase);
+        return active ? "current" : "";
+    }
+
+    // For top-level has_sub items: returns "open" when on any matching prefix
+    private string GetSubClass(params string[] prefixes)
+    {
+        var path = GetRelativePath();
+        bool active = prefixes.Any(p =>
+            path.StartsWith(p.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+        return active ? "open" : "";
+    }
+}

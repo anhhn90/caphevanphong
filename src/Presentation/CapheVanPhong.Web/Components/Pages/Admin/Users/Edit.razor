@@ -1,0 +1,350 @@
+@page "/admin/users/edit/{UserId}"
+@layout AdminLayout
+@attribute [Authorize(Roles = "admin,SuperAdmin")]
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+
+@inject UserManager<IdentityUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit User - Cà Phê Văn Phòng Admin</PageTitle>
+
+<!-- Page Heading -->
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-pencil"></i> Edit User</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/users">Users</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Edit</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<!-- Matter -->
+<div class="matter">
+    <div class="container">
+
+        @if (_notFound)
+        {
+            <div class="alert alert-danger">
+                <i class="fa fa-exclamation-circle"></i> User not found.
+                <a href="/admin/users" class="btn btn-xs btn-default" style="margin-left:8px;">Back to Users</a>
+            </div>
+        }
+        else if (_accessDenied)
+        {
+            <div class="alert alert-danger">
+                <i class="fa fa-lock"></i> Access denied. Only SuperAdmin can edit a SuperAdmin account.
+                <a href="/admin/users" class="btn btn-xs btn-default" style="margin-left:8px;">Back to Users</a>
+            </div>
+        }
+        else if (!_accessDenied)
+        {
+            <div class="row">
+                <div class="col-md-8 col-md-offset-2">
+
+                    @if (!string.IsNullOrEmpty(_successMessage))
+                    {
+                        <div class="alert alert-success alert-dismissable">
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                            <i class="fa fa-check-circle"></i> @_successMessage
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_errorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissable">
+                            <button type="button" class="close" data-dismiss="alert">&times;</button>
+                            <i class="fa fa-exclamation-circle"></i> @_errorMessage
+                        </div>
+                    }
+
+                    <!-- Profile Details -->
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left">Profile Details</div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+                                <EditForm Model="ProfileInput" FormName="edit-profile" OnValidSubmit="HandleEditProfileAsync" method="post">
+                                    <DataAnnotationsValidator />
+
+                                    <input type="hidden" @bind="ProfileInput.UserId" />
+
+                                    <div class="form-group">
+                                        <label>Username <span class="text-danger">*</span></label>
+                                        <InputText @bind-Value="ProfileInput.UserName" class="form-control" />
+                                        <ValidationMessage For="() => ProfileInput.UserName" class="text-danger small" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Email <span class="text-danger">*</span></label>
+                                        <InputText @bind-Value="ProfileInput.Email" class="form-control" />
+                                        <ValidationMessage For="() => ProfileInput.Email" class="text-danger small" />
+                                    </div>
+
+                                    @if (_isEditingSelf)
+                                    {
+                                        <div class="form-group">
+                                            <label>Role</label>
+                                            <input class="form-control" value="@string.Join(", ", _currentRoles)" disabled />
+                                            <small class="text-muted">You cannot change your own role.</small>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="form-group">
+                                            <label>Role <span class="text-danger">*</span></label>
+                                            <InputSelect @bind-Value="ProfileInput.Role" class="form-control">
+                                                @foreach (var role in _availableRoles)
+                                                {
+                                                    <option value="@role">@role</option>
+                                                }
+                                            </InputSelect>
+                                            <ValidationMessage For="() => ProfileInput.Role" class="text-danger small" />
+                                        </div>
+                                    }
+
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-save"></i> Save Changes
+                                        </button>
+                                        <a href="/admin/users" class="btn btn-default">
+                                            <i class="fa fa-times"></i> Cancel
+                                        </a>
+                                    </div>
+                                </EditForm>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reset Password -->
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left">Reset Password</div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+                                <EditForm Model="PasswordInput" FormName="reset-password" OnValidSubmit="HandleResetPasswordAsync" method="post">
+                                    <DataAnnotationsValidator />
+
+                                    <input type="hidden" @bind="PasswordInput.UserId" />
+
+                                    <div class="form-group">
+                                        <label>New Password <span class="text-danger">*</span></label>
+                                        <InputText @bind-Value="PasswordInput.NewPassword" class="form-control"
+                                                   type="password" placeholder="Min. 6 characters" />
+                                        <ValidationMessage For="() => PasswordInput.NewPassword" class="text-danger small" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Confirm Password <span class="text-danger">*</span></label>
+                                        <InputText @bind-Value="PasswordInput.ConfirmPassword" class="form-control"
+                                                   type="password" placeholder="Repeat the password" />
+                                        <ValidationMessage For="() => PasswordInput.ConfirmPassword" class="text-danger small" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <button type="submit" class="btn btn-warning">
+                                            <i class="fa fa-key"></i> Reset Password
+                                        </button>
+                                    </div>
+                                </EditForm>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string UserId { get; set; } = "";
+
+    [SupplyParameterFromForm(FormName = "edit-profile")]
+    private EditProfileInput ProfileInput { get; set; } = new();
+
+    [SupplyParameterFromForm(FormName = "reset-password")]
+    private ResetPasswordInput PasswordInput { get; set; } = new();
+
+    [SupplyParameterFromQuery(Name = "pwreset")]
+    private string? PwReset { get; set; }
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private bool _notFound;
+    private bool _accessDenied;
+    private bool _isEditingSelf;
+    private bool _currentUserIsSuperAdmin;
+    private bool _targetUserIsSuperAdmin;
+    private List<string> _availableRoles = [];
+    private List<string> _currentRoles = [];
+    private string? _successMessage;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (PwReset == "1") _successMessage = "Password reset successfully.";
+
+        _currentUserIsSuperAdmin = HttpContext?.User.IsInRole("SuperAdmin") ?? false;
+
+        var currentUserId = HttpContext?.User.FindFirst(
+            System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        _isEditingSelf = UserId == currentUserId;
+
+        _availableRoles = _currentUserIsSuperAdmin
+            ? ["user", "admin", "SuperAdmin"]
+            : ["user", "admin"];
+
+        await LoadUserAsync();
+    }
+
+    private async Task LoadUserAsync()
+    {
+        var user = await UserManager.FindByIdAsync(UserId);
+        if (user is null)
+        {
+            _notFound = true;
+            return;
+        }
+
+        _currentRoles = (await UserManager.GetRolesAsync(user)).ToList();
+        _targetUserIsSuperAdmin = _currentRoles.Contains("SuperAdmin", StringComparer.OrdinalIgnoreCase);
+
+        // Non-SuperAdmin cannot edit a SuperAdmin user
+        if (_targetUserIsSuperAdmin && !_currentUserIsSuperAdmin)
+        {
+            _accessDenied = true;
+            return;
+        }
+
+        // Pre-populate form when not already bound from a POST
+        if (string.IsNullOrEmpty(ProfileInput.UserId))
+        {
+            ProfileInput.UserId = user.Id;
+            ProfileInput.UserName = user.UserName ?? "";
+            ProfileInput.Email = user.Email ?? "";
+            ProfileInput.Role = _currentRoles.FirstOrDefault() ?? "user";
+        }
+
+        if (string.IsNullOrEmpty(PasswordInput.UserId))
+        {
+            PasswordInput.UserId = user.Id;
+        }
+    }
+
+    private async Task HandleEditProfileAsync()
+    {
+        var user = await UserManager.FindByIdAsync(ProfileInput.UserId);
+        if (user is null)
+        {
+            _errorMessage = "User not found.";
+            return;
+        }
+
+        // Guard: only SuperAdmin can edit a SuperAdmin user
+        if (await UserManager.IsInRoleAsync(user, "SuperAdmin") && !_currentUserIsSuperAdmin)
+        {
+            _errorMessage = "Only SuperAdmin can edit a SuperAdmin account.";
+            return;
+        }
+
+        // Guard: only SuperAdmin can assign the SuperAdmin role
+        if (!string.IsNullOrEmpty(ProfileInput.Role) &&
+            ProfileInput.Role.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) &&
+            !_currentUserIsSuperAdmin)
+        {
+            _errorMessage = "Only SuperAdmin can assign the SuperAdmin role.";
+            return;
+        }
+
+        user.UserName = ProfileInput.UserName;
+        user.NormalizedUserName = ProfileInput.UserName.ToUpperInvariant();
+        user.Email = ProfileInput.Email;
+        user.NormalizedEmail = ProfileInput.Email.ToUpperInvariant();
+
+        var result = await UserManager.UpdateAsync(user);
+        if (!result.Succeeded)
+        {
+            _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        // Update role only when not editing yourself
+        if (!_isEditingSelf && !string.IsNullOrEmpty(ProfileInput.Role))
+        {
+            var existingRoles = await UserManager.GetRolesAsync(user);
+            await UserManager.RemoveFromRolesAsync(user, existingRoles);
+            await UserManager.AddToRoleAsync(user, ProfileInput.Role);
+        }
+
+        NavigationManager.NavigateTo("/admin/users?updated=1", forceLoad: true);
+    }
+
+    private async Task HandleResetPasswordAsync()
+    {
+        var user = await UserManager.FindByIdAsync(PasswordInput.UserId);
+        if (user is null)
+        {
+            _errorMessage = "User not found.";
+            return;
+        }
+
+        // Guard: only SuperAdmin can reset a SuperAdmin user's password
+        if (await UserManager.IsInRoleAsync(user, "SuperAdmin") && !_currentUserIsSuperAdmin)
+        {
+            _errorMessage = "Only SuperAdmin can reset a SuperAdmin's password.";
+            return;
+        }
+
+        var token = await UserManager.GeneratePasswordResetTokenAsync(user);
+        var result = await UserManager.ResetPasswordAsync(user, token, PasswordInput.NewPassword);
+
+        if (result.Succeeded)
+            NavigationManager.NavigateTo($"/admin/users/edit/{PasswordInput.UserId}?pwreset=1", forceLoad: true);
+        else
+            _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+    }
+
+    private sealed class EditProfileInput
+    {
+        public string UserId { get; set; } = "";
+
+        [Required(ErrorMessage = "Username is required.")]
+        [StringLength(50, ErrorMessage = "Username must be at most {1} characters.", MinimumLength = 3)]
+        [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Only letters, digits and underscores allowed.")]
+        public string UserName { get; set; } = "";
+
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email address.")]
+        public string Email { get; set; } = "";
+
+        public string Role { get; set; } = "user";
+    }
+
+    private sealed class ResetPasswordInput
+    {
+        public string UserId { get; set; } = "";
+
+        [Required(ErrorMessage = "New password is required.")]
+        [StringLength(100, ErrorMessage = "Password must be at least {2} characters.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        public string NewPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "Please confirm the password.")]
+        [DataType(DataType.Password)]
+        [Compare("NewPassword", ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

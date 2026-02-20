@@ -1,5 +1,6 @@
 using CapheVanPhong.Application;
 using CapheVanPhong.Infrastructure;
+using CapheVanPhong.Infrastructure.Seeding;
 using CapheVanPhong.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,13 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
+
+// Seed database with default roles and admin account
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+    await seeder.SeedAsync();
+}
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())

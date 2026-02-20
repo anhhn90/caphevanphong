@@ -1,0 +1,187 @@
+@page "/admin/users/create"
+@layout AdminLayout
+@attribute [Authorize(Roles = "admin,SuperAdmin")]
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+
+@inject UserManager<IdentityUser> UserManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create User - Cà Phê Văn Phòng Admin</PageTitle>
+
+<!-- Page Heading -->
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-user-plus"></i> Create User</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/users">Users</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Create</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<!-- Matter -->
+<div class="matter">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                <div class="widget">
+                    <div class="widget-head">
+                        <div class="pull-left">New User Details</div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="widget-content">
+                        <div class="padd">
+
+                            @if (!string.IsNullOrEmpty(_errorMessage))
+                            {
+                                <div class="alert alert-danger alert-dismissable">
+                                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                    <i class="fa fa-exclamation-circle"></i> @_errorMessage
+                                </div>
+                            }
+
+                            <EditForm Model="Input" FormName="create-user" OnValidSubmit="HandleCreateAsync" method="post">
+                                <DataAnnotationsValidator />
+
+                                <div class="form-group">
+                                    <label>Username <span class="text-danger">*</span></label>
+                                    <InputText @bind-Value="Input.UserName" class="form-control"
+                                               placeholder="e.g. johndoe" />
+                                    <ValidationMessage For="() => Input.UserName" class="text-danger small" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Email <span class="text-danger">*</span></label>
+                                    <InputText @bind-Value="Input.Email" class="form-control"
+                                               placeholder="e.g. john@example.com" />
+                                    <ValidationMessage For="() => Input.Email" class="text-danger small" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Password <span class="text-danger">*</span></label>
+                                    <InputText @bind-Value="Input.Password" class="form-control"
+                                               type="password" placeholder="Min. 6 characters" />
+                                    <ValidationMessage For="() => Input.Password" class="text-danger small" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Confirm Password <span class="text-danger">*</span></label>
+                                    <InputText @bind-Value="Input.ConfirmPassword" class="form-control"
+                                               type="password" placeholder="Repeat the password" />
+                                    <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger small" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Role <span class="text-danger">*</span></label>
+                                    <InputSelect @bind-Value="Input.Role" class="form-control">
+                                        @foreach (var role in _availableRoles)
+                                        {
+                                            <option value="@role">@role</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="() => Input.Role" class="text-danger small" />
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fa fa-save"></i> Create User
+                                    </button>
+                                    <a href="/admin/users" class="btn btn-default">
+                                        <i class="fa fa-times"></i> Cancel
+                                    </a>
+                                </div>
+                            </EditForm>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm(FormName = "create-user")]
+    private CreateUserInput Input { get; set; } = new();
+
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private List<string> _availableRoles = [];
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        var isSuperAdmin = HttpContext?.User.IsInRole("SuperAdmin") ?? false;
+        _availableRoles = isSuperAdmin
+            ? ["user", "admin", "SuperAdmin"]
+            : ["user", "admin"];
+    }
+
+    private async Task HandleCreateAsync()
+    {
+        var isSuperAdmin = HttpContext?.User.IsInRole("SuperAdmin") ?? false;
+
+        // Guard: only SuperAdmin can assign the SuperAdmin role
+        if (Input.Role.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase) && !isSuperAdmin)
+        {
+            _errorMessage = "Only SuperAdmin can create a SuperAdmin account.";
+            return;
+        }
+
+        // Ensure the chosen role exists
+        if (!await RoleManager.RoleExistsAsync(Input.Role))
+        {
+            _errorMessage = $"Role '{Input.Role}' does not exist.";
+            return;
+        }
+
+        var user = new IdentityUser
+        {
+            UserName = Input.UserName,
+            Email = Input.Email,
+            EmailConfirmed = true
+        };
+
+        var result = await UserManager.CreateAsync(user, Input.Password);
+        if (!result.Succeeded)
+        {
+            _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        await UserManager.AddToRoleAsync(user, Input.Role);
+        NavigationManager.NavigateTo("/admin/users?created=1", forceLoad: true);
+    }
+
+    private sealed class CreateUserInput
+    {
+        [Required(ErrorMessage = "Username is required.")]
+        [StringLength(50, ErrorMessage = "Username must be at most {1} characters.", MinimumLength = 3)]
+        [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Only letters, digits and underscores allowed.")]
+        public string UserName { get; set; } = "";
+
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email address.")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Password is required.")]
+        [StringLength(100, ErrorMessage = "Password must be at least {2} characters.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "Please confirm the password.")]
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+
+        [Required(ErrorMessage = "Please select a role.")]
+        public string Role { get; set; } = "user";
+    }
+}

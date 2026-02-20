@@ -86,19 +86,30 @@ caphevanphong/
 ### Roles
 | Role | Description |
 |---|---|
-| `admin` | Full access to the Admin area; can manage menu items, orders, and users |
-| `user` | Authenticated customer; can view and edit their own orders in the Public area |
+| `SuperAdmin` | Highest privilege; can do everything `admin` can, **plus** create/edit/delete `SuperAdmin` accounts. Seeded on startup via `DatabaseSeeder`. |
+| `Admin` | Full access to the Admin area; can manage menu items, orders, and users — but **cannot** create, edit, or delete `SuperAdmin` accounts |
+| `User` | Authenticated customer; can view and edit their own orders in the Public area |
 | *(anonymous)* | Can browse the public menu and place orders (if allowed) |
 
+### SuperAdmin Restrictions
+Only `SuperAdmin` can:
+- Create a user with the `SuperAdmin` role
+- Edit or reset the password of a `SuperAdmin` user
+- Delete a `SuperAdmin` user
+
+These restrictions are enforced both in the UI (buttons/dropdowns hidden) and server-side (handler guards return early with an error).
+
 ### Route Protection
-- Admin pages must be decorated with `@attribute [Authorize(Roles = "admin")]`
-- User-specific pages (e.g., order history) must use `@attribute [Authorize(Roles = "user,admin")]`
-- Use `<AuthorizeView Roles="admin">` in components to conditionally show UI elements
+- Admin pages must be decorated with `@attribute [Authorize(Roles = "admin,SuperAdmin")]`
+- User-specific pages (e.g., order history) must use `@attribute [Authorize(Roles = "user,admin,SuperAdmin")]`
+- Use `<AuthorizeView Roles="admin,SuperAdmin">` in components to conditionally show UI elements
 - Redirect unauthorized users to `/account/login` (configure in `Program.cs`)
+- Use `HttpContext?.User.IsInRole("SuperAdmin")` to check SuperAdmin status within components
 
 ### Identity Setup
 - Use **ASP.NET Core Identity** integrated with EF Core (`IdentityDbContext`)
-- Seed default roles (`admin`, `user`) and a default admin account on startup
+- Seed default roles (`SuperAdmin`, `Admin`, `User`) in the `InitialCreate` migration via `InsertData`
+- Seed the default SuperAdmin account at runtime via `DatabaseSeeder` (password hashing requires runtime execution)
 - Store Identity tables in the same MSSQL database
 
 ---
@@ -487,7 +498,7 @@ dotnet run --project src/Presentation/CapheVanPhong.Web
 4. **Always** use `CancellationToken` in async methods
 5. **Always** validate inputs at the Application layer using FluentValidation
 6. Keep **Domain layer** free of any framework dependencies
-7. **Always** protect Admin pages with `[Authorize(Roles = "admin")]` — never rely on UI-only hiding
+7. **Always** protect Admin pages with `[Authorize(Roles = "admin,")]` — never rely on UI-only hiding
 8. **Always** scope user data queries to the currently logged-in user's ID (never expose other users' orders)
 9. **Always** use a Vietnamese-compatible font; write all UI text in **Vietnamese** for the **Public area** and in **English** for the **Admin area**
 10. **Always** design components mobile-first — start with the smallest screen size and scale up

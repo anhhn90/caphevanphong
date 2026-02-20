@@ -1,6 +1,7 @@
 using CapheVanPhong.Domain.Interfaces;
 using CapheVanPhong.Infrastructure.Persistence;
 using CapheVanPhong.Infrastructure.Persistence.Repositories;
+using CapheVanPhong.Infrastructure.Seeding;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,9 +32,21 @@ public static class DependencyInjection
         .AddEntityFrameworkStores<AppDbContext>()
         .AddDefaultTokenProviders();
 
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.LoginPath = "/account/login";
+            options.LogoutPath = "/account/logout";
+            options.AccessDeniedPath = "/account/login";
+            options.SlidingExpiration = true;
+            options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        });
+
         // Repositories
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        // Seeder
+        services.AddScoped<DatabaseSeeder>();
 
         return services;
     }

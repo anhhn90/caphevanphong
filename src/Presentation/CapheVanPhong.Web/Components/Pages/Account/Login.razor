@@ -1,0 +1,133 @@
+@page "/account/login"
+@layout Layout
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+
+@inject SignInManager<IdentityUser> SignInManager
+@inject UserManager<IdentityUser> UserManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Đăng Nhập - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 position-relative overlay-bottom">
+    <div class="d-flex flex-column align-items-center justify-content-center pt-0 pt-lg-5" style="min-height: 400px">
+        <h1 class="display-4 mb-3 mt-0 mt-lg-5 text-white text-uppercase">Đăng Nhập</h1>
+        <div class="d-inline-flex mb-lg-5">
+            <p class="m-0 text-white"><a class="text-white" href="/">Trang Chủ</a></p>
+            <p class="m-0 text-white px-2">/</p>
+            <p class="m-0 text-white">Đăng Nhập</p>
+        </div>
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- Login Form Start -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-5">
+            <div class="bg-white p-4 p-md-5" style="border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+                <div class="section-title text-center mb-4">
+                    <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Tài Khoản</h4>
+                    <h1 class="display-5">Chào Mừng Trở Lại</h1>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle mr-2"></i>@_errorMessage
+                    </div>
+                }
+
+                <EditForm Model="Input" FormName="login" OnValidSubmit="HandleLogin" method="post">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="email" class="font-weight-bold">Email</label>
+                        <InputText id="email" @bind-Value="Input.Email" class="form-control form-control-lg"
+                                   placeholder="Nhập email của bạn" autocomplete="username" />
+                        <ValidationMessage For="() => Input.Email" class="text-danger small mt-1" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="font-weight-bold">Mật Khẩu</label>
+                        <InputText id="password" @bind-Value="Input.Password" class="form-control form-control-lg"
+                                   placeholder="Nhập mật khẩu" type="password" autocomplete="current-password" />
+                        <ValidationMessage For="() => Input.Password" class="text-danger small mt-1" />
+                    </div>
+
+                    <div class="form-group">
+                        <div class="form-check">
+                            <InputCheckbox id="rememberMe" @bind-Value="Input.RememberMe" class="form-check-input" />
+                            <label class="form-check-label" for="rememberMe">Ghi nhớ đăng nhập</label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg mt-2">
+                        <i class="fa fa-sign-in-alt mr-2"></i>Đăng Nhập
+                    </button>
+                </EditForm>
+
+                <hr class="my-4" />
+
+                <div class="text-center">
+                    <p class="mb-0">
+                        Chưa có tài khoản?
+                        <a href="/account/register" class="text-primary font-weight-bold">Đăng Ký Ngay</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Login Form End -->
+
+@code {
+    [SupplyParameterFromForm]
+    private LoginInput Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private string? _errorMessage;
+
+    private async Task HandleLogin()
+    {
+        var user = await UserManager.FindByEmailAsync(Input.Email);
+        if (user is null)
+        {
+            _errorMessage = "Email hoặc mật khẩu không đúng. Vui lòng thử lại.";
+            return;
+        }
+
+        var result = await SignInManager.PasswordSignInAsync(
+            user.UserName!, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+        if (result.Succeeded)
+        {
+            NavigationManager.NavigateTo(ReturnUrl ?? "/", forceLoad: true);
+        }
+        else if (result.IsLockedOut)
+        {
+            _errorMessage = "Tài khoản của bạn đã bị khóa. Vui lòng thử lại sau.";
+        }
+        else
+        {
+            _errorMessage = "Email hoặc mật khẩu không đúng. Vui lòng thử lại.";
+        }
+    }
+
+    private sealed class LoginInput
+    {
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        public bool RememberMe { get; set; }
+    }
+}

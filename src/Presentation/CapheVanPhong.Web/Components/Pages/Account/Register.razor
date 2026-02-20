@@ -1,0 +1,144 @@
+@page "/account/register"
+@layout Layout
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Identity
+@using System.ComponentModel.DataAnnotations
+
+@inject UserManager<IdentityUser> UserManager
+@inject SignInManager<IdentityUser> SignInManager
+@inject RoleManager<IdentityRole> RoleManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Đăng Ký - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 position-relative overlay-bottom">
+    <div class="d-flex flex-column align-items-center justify-content-center pt-0 pt-lg-5" style="min-height: 400px">
+        <h1 class="display-4 mb-3 mt-0 mt-lg-5 text-white text-uppercase">Đăng Ký</h1>
+        <div class="d-inline-flex mb-lg-5">
+            <p class="m-0 text-white"><a class="text-white" href="/">Trang Chủ</a></p>
+            <p class="m-0 text-white px-2">/</p>
+            <p class="m-0 text-white">Đăng Ký</p>
+        </div>
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- Register Form Start -->
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="bg-white p-4 p-md-5" style="border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+                <div class="section-title text-center mb-4">
+                    <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Tài Khoản</h4>
+                    <h1 class="display-5">Tạo Tài Khoản Mới</h1>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fa fa-exclamation-circle mr-2"></i>@_errorMessage
+                    </div>
+                }
+
+                <EditForm Model="Input" FormName="register" OnValidSubmit="HandleRegister" method="post">
+                    <DataAnnotationsValidator />
+
+                    <div class="form-group">
+                        <label for="userName" class="font-weight-bold">Tên Hiển Thị</label>
+                        <InputText id="userName" @bind-Value="Input.UserName" class="form-control form-control-lg"
+                                   placeholder="Nhập tên hiển thị (không có khoảng trắng)" autocomplete="username" />
+                        <ValidationMessage For="() => Input.UserName" class="text-danger small mt-1" />
+                        <small class="form-text text-muted">Chỉ dùng chữ cái, số và dấu gạch dưới (_).</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="font-weight-bold">Email</label>
+                        <InputText id="email" @bind-Value="Input.Email" class="form-control form-control-lg"
+                                   placeholder="Nhập email của bạn" autocomplete="email" />
+                        <ValidationMessage For="() => Input.Email" class="text-danger small mt-1" />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="font-weight-bold">Mật Khẩu</label>
+                        <InputText id="password" @bind-Value="Input.Password" class="form-control form-control-lg"
+                                   placeholder="Tối thiểu 6 ký tự" type="password" autocomplete="new-password" />
+                        <ValidationMessage For="() => Input.Password" class="text-danger small mt-1" />
+                        <small class="form-text text-muted">Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường và số.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirmPassword" class="font-weight-bold">Xác Nhận Mật Khẩu</label>
+                        <InputText id="confirmPassword" @bind-Value="Input.ConfirmPassword" class="form-control form-control-lg"
+                                   placeholder="Nhập lại mật khẩu" type="password" autocomplete="new-password" />
+                        <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger small mt-1" />
+                    </div>
+
+                    <button type="submit" class="btn btn-primary btn-block btn-lg mt-2">
+                        <i class="fa fa-user-plus mr-2"></i>Đăng Ký
+                    </button>
+                </EditForm>
+
+                <hr class="my-4" />
+
+                <div class="text-center">
+                    <p class="mb-0">
+                        Đã có tài khoản?
+                        <a href="/account/login" class="text-primary font-weight-bold">Đăng Nhập Ngay</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Register Form End -->
+
+@code {
+    [SupplyParameterFromForm]
+    private RegisterInput Input { get; set; } = new();
+
+    private string? _errorMessage;
+
+    private async Task HandleRegister()
+    {
+        var user = new IdentityUser { UserName = Input.UserName, Email = Input.Email };
+        var result = await UserManager.CreateAsync(user, Input.Password);
+
+        if (result.Succeeded)
+        {
+            // Ensure "user" role exists then assign it
+            if (!await RoleManager.RoleExistsAsync("user"))
+                await RoleManager.CreateAsync(new IdentityRole("user"));
+
+            await UserManager.AddToRoleAsync(user, "user");
+            await SignInManager.SignInAsync(user, isPersistent: false);
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            _errorMessage = string.Join(" ", result.Errors.Select(e => e.Description));
+        }
+    }
+
+    private sealed class RegisterInput
+    {
+        [Required(ErrorMessage = "Vui lòng nhập tên hiển thị.")]
+        [StringLength(50, ErrorMessage = "Tên hiển thị tối đa {1} ký tự.", MinimumLength = 3)]
+        [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Tên hiển thị chỉ được dùng chữ cái, số và dấu gạch dưới.")]
+        public string UserName { get; set; } = "";
+
+        [Required(ErrorMessage = "Vui lòng nhập email.")]
+        [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "Vui lòng nhập mật khẩu.")]
+        [StringLength(100, ErrorMessage = "Mật khẩu phải có ít nhất {2} ký tự.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        public string Password { get; set; } = "";
+
+        [Required(ErrorMessage = "Vui lòng xác nhận mật khẩu.")]
+        [DataType(DataType.Password)]
+        [Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp.")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

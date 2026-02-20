@@ -307,11 +307,32 @@ namespace CapheVanPhong.Infrastructure.Migrations
                 name: "IX_Products_CategoryId",
                 table: "Products",
                 column: "CategoryId");
+
+            // Seed default roles
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "Name", "NormalizedName", "ConcurrencyStamp" },
+                values: new object[,]
+                {
+                    { "a2c1e0d9-c3d4-e5f6-a7b8-901234567890", "SuperAdmin", "SUPERADMIN", "a2c1e0d9-c3d4-e5f6-a7b8-901234560000" },
+                    { "b3d2e1f0-a1b2-c3d4-e5f6-789012345678", "Admin", "ADMIN", "b3d2e1f0-a1b2-c3d4-e5f6-789012340000" },
+                    { "c4e3f2a1-b2c3-d4e5-f6a7-890123456789", "User",  "USER",  "c4e3f2a1-b2c3-d4e5-f6a7-890123450000" }
+                });
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DeleteData(
+                table: "AspNetRoles",
+                keyColumn: "Id",
+                keyValues: new object[]
+                {
+                    "a2c1e0d9-c3d4-e5f6-a7b8-901234567890",
+                    "b3d2e1f0-a1b2-c3d4-e5f6-789012345678",
+                    "c4e3f2a1-b2c3-d4e5-f6a7-890123456789"
+                });
+
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 

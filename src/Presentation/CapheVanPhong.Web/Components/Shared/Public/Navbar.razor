@@ -30,7 +30,7 @@
                                 <i class="fa fa-user mr-1"></i>@context.User.Identity?.Name
                             </a>
                             <div class="dropdown-menu text-capitalize">
-                                <AuthorizeView Roles="admin">
+                                <AuthorizeView Roles="Admin, SuperAdmin">
                                     <Authorized Context="adminCtx">
                                         <a href="/admin" class="dropdown-item">Quản Trị</a>
                                     </Authorized>
