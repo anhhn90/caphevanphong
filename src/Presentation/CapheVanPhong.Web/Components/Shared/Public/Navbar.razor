@@ -1,0 +1,51 @@
+@using Microsoft.AspNetCore.Components.Authorization
+
+<div class="container-fluid p-0 nav-bar">
+    <nav class="navbar navbar-expand-lg bg-none navbar-dark py-3">
+        <a href="/" class="navbar-brand px-lg-4 m-0">
+            <h1 class="m-0 display-4 text-uppercase text-white">Cà Phê Văn Phòng</h1>
+        </a>
+        <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbarCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
+            <div class="navbar-nav ml-auto p-4">
+                <NavLink href="/" class="nav-item nav-link" ActiveClass="active" Match="NavLinkMatch.All">Trang Chủ</NavLink>
+                <NavLink href="/gioi-thieu" class="nav-item nav-link" ActiveClass="active">Giới Thiệu</NavLink>
+                <NavLink href="/dich-vu" class="nav-item nav-link" ActiveClass="active">Dịch Vụ</NavLink>
+                <NavLink href="/thuc-don" class="nav-item nav-link" ActiveClass="active">Thực Đơn</NavLink>
+                <div class="nav-item dropdown">
+                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Trang Khác</a>
+                    <div class="dropdown-menu text-capitalize">
+                        <NavLink href="/dat-ban" class="dropdown-item" ActiveClass="active">Đặt Bàn</NavLink>
+                        <NavLink href="/danh-gia" class="dropdown-item" ActiveClass="active">Đánh Giá</NavLink>
+                    </div>
+                </div>
+                <NavLink href="/lien-he" class="nav-item nav-link" ActiveClass="active">Liên Hệ</NavLink>
+
+                <AuthorizeView>
+                    <Authorized>
+                        <div class="nav-item dropdown">
+                            <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">
+                                <i class="fa fa-user mr-1"></i>@context.User.Identity?.Name
+                            </a>
+                            <div class="dropdown-menu text-capitalize">
+                                <AuthorizeView Roles="admin">
+                                    <Authorized Context="adminCtx">
+                                        <a href="/admin" class="dropdown-item">Quản Trị</a>
+                                    </Authorized>
+                                </AuthorizeView>
+                                <a href="/don-hang-cua-toi" class="dropdown-item">Đơn Hàng Của Tôi</a>
+                                <a href="/account/logout" class="dropdown-item">Đăng Xuất</a>
+                            </div>
+                        </div>
+                    </Authorized>
+                    <NotAuthorized>
+                        <NavLink href="/account/login" class="nav-item nav-link" ActiveClass="active">Đăng Nhập</NavLink>
+                        <NavLink href="/account/register" class="nav-item nav-link btn btn-primary ml-2 px-3" ActiveClass="active">Đăng Ký</NavLink>
+                    </NotAuthorized>
+                </AuthorizeView>
+            </div>
+        </div>
+    </nav>
+</div>

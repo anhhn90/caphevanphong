@@ -1,0 +1,110 @@
+@page "/dich-vu"
+@layout Layout
+@using CapheVanPhong.Web.Components.Layout
+@inherits ServiceBase
+
+<PageTitle>Dịch Vụ - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 position-relative overlay-bottom">
+    <div class="d-flex flex-column align-items-center justify-content-center pt-0 pt-lg-5" style="min-height: 400px">
+        <h1 class="display-4 mb-3 mt-0 mt-lg-5 text-white text-uppercase">Dịch Vụ</h1>
+        <div class="d-inline-flex mb-lg-5">
+            <p class="m-0 text-white"><a class="text-white" href="/">Trang Chủ</a></p>
+            <p class="m-0 text-white px-2">/</p>
+            <p class="m-0 text-white">Dịch Vụ</p>
+        </div>
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- Service Start -->
+<div class="container-fluid pt-5">
+    <div class="container">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Dịch Vụ Của Chúng Tôi</h4>
+            <h1 class="display-4">Hạt Cà Phê Tươi & Hữu Cơ</h1>
+        </div>
+        <div class="row">
+            @foreach (var service in Services)
+            {
+                <div class="col-lg-6 mb-5">
+                    <div class="row align-items-center">
+                        <div class="col-sm-5">
+                            <img class="img-fluid mb-3 mb-sm-0" src="@service.ImageUrl" alt="@service.Title">
+                        </div>
+                        <div class="col-sm-7">
+                            <h4><i class="@service.IconClass service-icon"></i>@service.Title</h4>
+                            <p class="m-0">@service.Description</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- Service End -->
+
+<!-- Why Choose Us Start -->
+<div class="offer container-fluid my-5 py-5 text-center position-relative overlay-top overlay-bottom">
+    <div class="container py-5">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Tại Sao Chọn Chúng Tôi</h4>
+            <h1 class="display-4 text-white">Chúng Tôi Khác Biệt</h1>
+        </div>
+        <div class="row mt-4">
+            @foreach (var feature in Features)
+            {
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="text-center">
+                        <i class="fa fa-3x @feature.IconClass text-primary mb-3"></i>
+                        <h4 class="text-white">@feature.Title</h4>
+                        <p class="text-white">@feature.Description</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- Why Choose Us End -->
+
+<!-- Process Start -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Quy Trình</h4>
+            <h1 class="display-4">Từ Hạt Đến Tách</h1>
+        </div>
+        <div class="row">
+            <div class="col-md-3 text-center mb-4">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px;">
+                    <i class="fa fa-2x fa-seedling"></i>
+                </div>
+                <h5>1. Tuyển Chọn Hạt</h5>
+                <p>Hạt cà phê được tuyển chọn kỹ lưỡng từ những vùng trồng nổi tiếng của Việt Nam.</p>
+            </div>
+            <div class="col-md-3 text-center mb-4">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px;">
+                    <i class="fa fa-2x fa-fire"></i>
+                </div>
+                <h5>2. Rang Xay Tươi</h5>
+                <p>Hạt cà phê được rang xay tươi mỗi ngày theo đúng tỷ lệ và nhiệt độ chuẩn.</p>
+            </div>
+            <div class="col-md-3 text-center mb-4">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px;">
+                    <i class="fa fa-2x fa-coffee"></i>
+                </div>
+                <h5>3. Pha Chế Chuyên Nghiệp</h5>
+                <p>Barista chuyên nghiệp pha chế từng tách cà phê với kỹ thuật chuẩn và tình yêu nghề.</p>
+            </div>
+            <div class="col-md-3 text-center mb-4">
+                <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px;">
+                    <i class="fa fa-2x fa-smile"></i>
+                </div>
+                <h5>4. Phục Vụ Tận Tâm</h5>
+                <p>Cà phê được phục vụ nóng hổi, thơm ngon và đúng yêu cầu của từng khách hàng.</p>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Process End -->

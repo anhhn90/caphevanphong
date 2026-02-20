@@ -17,7 +17,7 @@ The application is a Vietnamese café website (**Cà Phê Văn Phòng**) with tw
 - **Pattern:** Repository Pattern + Unit of Work
 - **Authentication & Authorization:** ASP.NET Core Identity with Role-Based Access Control (RBAC)
 - **UI:** Mobile-first responsive design (CSS / Bootstrap or Tailwind CSS)
-- **Localization:** Vietnamese (Tiếng Việt) — primary language; font must support Vietnamese characters
+- **Localization:** Vietnamese (Tiếng Việt) — primary language for the **Public area**; font must support Vietnamese characters. The **Admin area** uses **English** exclusively.
 
 ---
 
@@ -61,7 +61,7 @@ caphevanphong/
 
 ### Application Layer (`CapheVanPhong.Application`)
 - Contains **Use Cases** (Commands/Queries using CQRS with MediatR)
-- Contains **DTOs**, **Validators** (FluentValidation), and **Mapping Profiles** (AutoMapper or Mapster)
+- Contains **DTOs**, **Validators** (FluentValidation), and **manual mapping methods** (no AutoMapper — map entities to DTOs by hand)
 - Depends only on the **Domain** layer
 - Defines interfaces for infrastructure services (e.g., `IEmailService`)
 
@@ -124,7 +124,8 @@ caphevanphong/
       font-family: 'Be Vietnam Pro', sans-serif !important;
   }
   ```
-- Ensure all text content, labels, and messages are written in **Vietnamese (Tiếng Việt)**
+- Ensure all text content, labels, and messages in the **Public area** are written in **Vietnamese (Tiếng Việt)**
+- All text content, labels, and messages in the **Admin area** must be written in **English**
 
 ---
 
@@ -459,7 +460,6 @@ Example `appsettings.json`:
 | `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | Infrastructure |
 | `MediatR` | Application |
 | `FluentValidation` | Application |
-| `AutoMapper` | Application |
 | `Microsoft.AspNetCore.Components` | Web (built-in) |
 | `Microsoft.AspNetCore.Components.Authorization` | Web (built-in) |
 
@@ -489,5 +489,5 @@ dotnet run --project src/Presentation/CapheVanPhong.Web
 6. Keep **Domain layer** free of any framework dependencies
 7. **Always** protect Admin pages with `[Authorize(Roles = "admin")]` — never rely on UI-only hiding
 8. **Always** scope user data queries to the currently logged-in user's ID (never expose other users' orders)
-9. **Always** use a Vietnamese-compatible font and write all UI text in Vietnamese
+9. **Always** use a Vietnamese-compatible font; write all UI text in **Vietnamese** for the **Public area** and in **English** for the **Admin area**
 10. **Always** design components mobile-first — start with the smallest screen size and scale up
