@@ -26,17 +26,20 @@
         </li>
 
         <!-- Menu Management -->
-        <li class="has_sub @GetSubClass("/admin/products", "/admin/categories")">
+        <li class="has_sub @GetSubClass("/admin/products", "/admin/categories", "/admin/brands")">
             <a href="javascript:void(0)">
-                <i class="fa fa-list-alt"></i> Menu
+                <i class="fa fa-list-alt"></i> Catalog
                 <span class="pull-right"><i class="fa fa-chevron-right"></i></span>
             </a>
             <ul>
-                <li class="@GetItemClass("/admin/products", exact: true)">
-                    <a href="/admin/products">Products</a>
+                <li class="@GetItemClass("/admin/products", exact: false)">
+                    <a href="/admin/products"><i class="fa fa-tag"></i> Sản Phẩm</a>
                 </li>
-                <li class="@GetItemClass("/admin/categories", exact: true)">
-                    <a href="/admin/categories">Categories</a>
+                <li class="@GetItemClass("/admin/categories", exact: false)">
+                    <a href="/admin/categories"><i class="fa fa-sitemap"></i> Danh Mục</a>
+                </li>
+                <li class="@GetItemClass("/admin/brands", exact: false)">
+                    <a href="/admin/brands"><i class="fa fa-certificate"></i> Thương Hiệu</a>
                 </li>
             </ul>
         </li>
@@ -64,7 +67,7 @@
     private string GetOpenClass(string href, bool exact)
     {
         var path = GetRelativePath();
-        var hrefTrimmed = href.TrimEnd("");
+        var hrefTrimmed = href.TrimEnd('/');
         bool active = exact
             ? path.Equals(hrefTrimmed, StringComparison.OrdinalIgnoreCase)
             : path.StartsWith(hrefTrimmed, StringComparison.OrdinalIgnoreCase);

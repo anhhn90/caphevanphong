@@ -1,3 +1,4 @@
+using CapheVanPhong.Application.Services;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -8,8 +9,12 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly()));
-        services.AddAutoMapper(Assembly.GetExecutingAssembly());
-        
+
+        // Category management services
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IBrandService, BrandService>();
+        services.AddScoped<IProductService, ProductService>();
+
         return services;
     }
 }

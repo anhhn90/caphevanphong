@@ -20,3 +20,5 @@ tests/CapheVanPhong.Domain.Tests/obj/
 tests/CapheVanPhong.Infrastructure.Tests/bin/
 tests/CapheVanPhong.Infrastructure.Tests/obj/
 .vs/
+src/Presentation/CapheVanPhong.Web/wwwroot/public/img/
+.claude/settings.local.json

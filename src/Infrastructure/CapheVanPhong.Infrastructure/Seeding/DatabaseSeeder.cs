@@ -22,7 +22,7 @@ public class DatabaseSeeder
     private async Task SeedRolesAsync()
     {
         // Ensure both roles exist (belt-and-suspenders alongside the migration seed)
-        string[] roles = ["superadmin", "admin", "user"];
+        string[] roles = ["SuperAdmin", "Admin", "User"];
         foreach (var role in roles)
         {
             if (!await _roleManager.RoleExistsAsync(role))
@@ -48,7 +48,7 @@ public class DatabaseSeeder
 
         var result1 = await _userManager.CreateAsync(user, password);
         if (result1.Succeeded)
-            await _userManager.AddToRoleAsync(user, "User");
+            await _userManager.AddToRoleAsync(user, role: "User");
 
         // Seed Admin account
         const string adminEmail = "admin@caphevanphong.vn";
@@ -65,7 +65,7 @@ public class DatabaseSeeder
 
         var result2 = await _userManager.CreateAsync(admin, password);
         if (result2.Succeeded)
-            await _userManager.AddToRoleAsync(admin, "Admin");
+            await _userManager.AddToRoleAsync(admin, role: "Admin");
 
 
         // Seed SuperAdmin account
@@ -83,6 +83,6 @@ public class DatabaseSeeder
 
         var result3 = await _userManager.CreateAsync(sadmin, password);
         if (result3.Succeeded)
-            await _userManager.AddToRoleAsync(sadmin, "SuperAdmin");
+            await _userManager.AddToRoleAsync(sadmin, role: "SuperAdmin");
     }
 }

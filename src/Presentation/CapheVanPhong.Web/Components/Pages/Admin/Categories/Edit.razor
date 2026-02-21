@@ -1,0 +1,253 @@
+@page "/admin/categories/edit/{Id:int}"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin, SuperAdmin")]
+@using CapheVanPhong.Application.Helpers
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject ICategoryService CategoryService
+@inject IFileStorageService FileStorageService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Sửa Danh Mục - Cà Phê Văn Phòng Admin</PageTitle>
+
+<!-- Page Heading -->
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-pencil"></i> Sửa Danh Mục</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/categories">Danh Mục</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Sửa</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<!-- Matter -->
+<div class="matter">
+    <div class="container">
+
+        @if (!_loaded)
+        {
+            <p><i class="fa fa-spinner fa-spin"></i> Đang tải...</p>
+        }
+        else if (_notFound)
+        {
+            <div class="alert alert-danger">Danh mục không tồn tại.</div>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fa fa-exclamation-circle"></i> @_errorMessage
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left">
+                                Thông Tin Danh Mục
+                                @if (_currentLevel == 0)
+                                {
+                                    <span class="label label-default" style="margin-left:8px;">Root</span>
+                                }
+                                else if (_currentLevel == 1)
+                                {
+                                    <span class="label label-info" style="margin-left:8px;">Sub</span>
+                                }
+                                else
+                                {
+                                    <span class="label label-primary" style="margin-left:8px;">Leaf</span>
+                                }
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+                                <form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault>
+
+                                    <div class="form-group">
+                                        <label>Danh Mục Cha</label>
+                                        <select class="form-control" @bind="_parentId">
+                                            <option value="">-- Không có (Danh mục gốc) --</option>
+                                            @foreach (var c in _parentCandidates)
+                                            {
+                                                var prefix = c.Level == 0 ? "" : "\u00a0\u00a0\u00a0\u00a0";
+                                                <option value="@c.Id">@(prefix + c.Name)</option>
+                                            }
+                                        </select>
+                                        <p class="help-block">Thay đổi danh mục cha sẽ cập nhật cấp bậc. Tối đa 3 cấp.</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Tên Danh Mục <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" @bind="_name"
+                                               @oninput="OnNameInput" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Slug <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" @bind="_slug" />
+                                        <p class="help-block">URL thân thiện SEO.</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Mô Tả</label>
+                                        <textarea class="form-control" rows="3" @bind="_description"></textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Hình Ảnh</label>
+                                        @if (!string.IsNullOrEmpty(_imageName) && _selectedFile is null)
+                                        {
+                                            <p class="help-block"><i class="fa fa-image"></i> Hiện tại: <strong>@_imageName</strong></p>
+                                        }
+                                        <InputFile OnChange="OnImageSelected" accept="image/*" class="form-control" />
+                                        @if (_selectedFile is not null)
+                                        {
+                                            <p class="help-block"><i class="fa fa-check text-success"></i> Sẽ thay bằng: <strong>@_selectedFile.Name</strong></p>
+                                        }
+                                        <p class="help-block">File sẽ được lưu vào <code>wwwroot/public/img/categories/</code>. Để trống nếu không thay đổi.</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Thứ Tự Hiển Thị</label>
+                                        <input type="number" class="form-control" @bind="_displayOrder" min="0" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Trạng Thái</label>
+                                        <div class="checkbox">
+                                            <label>
+                                                <input type="checkbox" @bind="_isActive" /> Hiện danh mục này
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <a href="/admin/categories" class="btn btn-default">
+                                            <i class="fa fa-arrow-left"></i> Quay Lại
+                                        </a>
+                                        <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                            @if (_isSubmitting)
+                                            {
+                                                <i class="fa fa-spinner fa-spin"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa fa-save"></i>
+                                            }
+                                            Lưu Thay Đổi
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private List<CapheVanPhong.Domain.Entities.Category> _parentCandidates = [];
+
+    private int? _parentId;
+    private int _currentLevel;
+    private string _name = string.Empty;
+    private string _slug = string.Empty;
+    private string _description = string.Empty;
+    private string? _imageName;
+    private IBrowserFile? _selectedFile;
+    private int _displayOrder;
+    private bool _isActive = true;
+    private bool _isSubmitting;
+    private bool _loaded;
+    private bool _notFound;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var category = await CategoryService.GetByIdAsync(Id);
+        if (category is null)
+        {
+            _notFound = true;
+            _loaded = true;
+            return;
+        }
+
+        _name = category.Name;
+        _slug = category.Slug;
+        _description = category.Description;
+        _imageName = category.ImageName;
+        _displayOrder = category.DisplayOrder;
+        _isActive = category.IsActive;
+        _parentId = category.ParentId;
+        _currentLevel = category.Level;
+
+        // Load parent candidates: any category with Level < 2, excluding self and its descendants
+        var allCategories = (await CategoryService.GetAllAsync()).ToList();
+        var descendantIds = (await CategoryService.GetSelfAndDescendantIdsAsync(Id)).ToHashSet();
+
+        _parentCandidates = allCategories
+            .Where(c => c.Level < 2 && !descendantIds.Contains(c.Id))
+            .OrderBy(c => c.Level)
+            .ThenBy(c => c.DisplayOrder)
+            .ThenBy(c => c.Name)
+            .ToList();
+
+        _loaded = true;
+    }
+
+    private void OnNameInput(ChangeEventArgs e)
+    {
+        _name = e.Value?.ToString() ?? string.Empty;
+    }
+
+    private void OnImageSelected(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _errorMessage = "Tên danh mục không được để trống.";
+            _isSubmitting = false;
+            return;
+        }
+
+        if (_selectedFile is not null)
+        {
+            await using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            _imageName = await FileStorageService.SaveAsync("categories", _selectedFile.Name, stream);
+        }
+
+        var (success, error) = await CategoryService.UpdateAsync(
+            Id, _name, _slug, _description, _parentId, _imageName, _displayOrder, _isActive);
+
+        if (success)
+            NavigationManager.NavigateTo("/admin/categories?updated=1", forceLoad: true);
+        else
+        {
+            _errorMessage = error;
+            _isSubmitting = false;
+        }
+    }
+}

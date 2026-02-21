@@ -16,18 +16,24 @@ public class Order : BaseEntity
     public decimal TotalAmount { get; private set; }
     public OrderStatus Status { get; private set; }
     public DateTime? CompletedAt { get; private set; }
-    
+
     public ICollection<OrderItem> OrderItems { get; private set; } = new List<OrderItem>();
 
     private Order() { } // EF Core constructor
 
-    public static Order Create(string userId, string customerName, string customerPhone, string? customerEmail = null, string? deliveryAddress = null, string? notes = null)
+    public static Order Create(
+        string userId,
+        string customerName,
+        string customerPhone,
+        string? customerEmail = null,
+        string? deliveryAddress = null,
+        string? notes = null)
     {
         if (string.IsNullOrWhiteSpace(customerName))
-            throw new ArgumentException("Tên khách hàng không được để trống", nameof(customerName));
-        
+            throw new ArgumentException("Customer name cannot be empty.", nameof(customerName));
+
         if (string.IsNullOrWhiteSpace(customerPhone))
-            throw new ArgumentException("Số điện thoại không được để trống", nameof(customerPhone));
+            throw new ArgumentException("Customer phone cannot be empty.", nameof(customerPhone));
 
         return new Order
         {
@@ -47,9 +53,11 @@ public class Order : BaseEntity
     public void AddItem(Product product, int quantity)
     {
         if (quantity <= 0)
-            throw new ArgumentException("Số lượng phải lớn hơn 0", nameof(quantity));
+            throw new ArgumentException("Quantity must be greater than 0.", nameof(quantity));
+        if (!product.Price.HasValue || product.Price.Value <= 0)
+            throw new InvalidOperationException("Product does not have a valid price for ordering.");
 
-        var orderItem = OrderItem.Create(Id, product.Id, product.Name, product.Price, quantity);
+        var orderItem = OrderItem.Create(Id, product.Id, product.Name, product.Price.Value, quantity);
         OrderItems.Add(orderItem);
         RecalculateTotal();
         UpdatedAt = DateTime.UtcNow;

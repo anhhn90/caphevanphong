@@ -1,0 +1,130 @@
+@page "/admin/brands/edit/{Id:int}"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin, SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+
+@inject IBrandService BrandService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Sửa Thương Hiệu - Cà Phê Văn Phòng Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-pencil"></i> Sửa Thương Hiệu</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/brands">Thương Hiệu</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Sửa</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+        @if (!_loaded) { <p><i class="fa fa-spinner fa-spin"></i> Đang tải...</p> }
+        else if (_notFound) { <div class="alert alert-danger">Thương hiệu không tồn tại.</div> }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    @_errorMessage
+                </div>
+            }
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left">Thông Tin Thương Hiệu</div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+                                <form method="post" @formname="edit-brand" @onsubmit="HandleSubmitAsync">
+                                    <AntiforgeryToken />
+                                    <div class="form-group">
+                                        <label>Tên <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" @bind="_name" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Slug <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" @bind="_slug" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Mô Tả</label>
+                                        <textarea class="form-control" rows="2" @bind="_description"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Tên File Logo</label>
+                                        <input type="text" class="form-control" @bind="_logoName" placeholder="VD: logo.png" />
+                                        <p class="help-block">Đặt file vào thư mục <code>wwwroot/public/img/brands/</code>.</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Thứ Tự Hiển Thị</label>
+                                        <input type="number" class="form-control" @bind="_displayOrder" min="0" />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Trạng Thái</label>
+                                        <div class="checkbox">
+                                            <label><input type="checkbox" @bind="_isActive" /> Hiện</label>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <a href="/admin/brands" class="btn btn-default"><i class="fa fa-arrow-left"></i> Quay Lại</a>
+                                        <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                            <i class="fa fa-save"></i> Lưu Thay Đổi
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private string _name = string.Empty;
+    private string _slug = string.Empty;
+    private string? _description;
+    private string? _logoName;
+    private int _displayOrder;
+    private bool _isActive = true;
+    private bool _isSubmitting;
+    private bool _loaded;
+    private bool _notFound;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var brand = await BrandService.GetByIdAsync(Id);
+        if (brand is null) { _notFound = true; }
+        else
+        {
+            _name = brand.Name; _slug = brand.Slug; _description = brand.Description;
+            _logoName = brand.LogoName; _displayOrder = brand.DisplayOrder; _isActive = brand.IsActive;
+        }
+        _loaded = true;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _isSubmitting = true; _errorMessage = null;
+        if (string.IsNullOrWhiteSpace(_name)) { _errorMessage = "Tên không được để trống."; _isSubmitting = false; return; }
+
+        var (success, error) = await BrandService.UpdateAsync(Id, _name, _slug,
+            string.IsNullOrWhiteSpace(_description) ? null : _description,
+            string.IsNullOrWhiteSpace(_logoName) ? null : _logoName,
+            _displayOrder, _isActive);
+
+        if (success) NavigationManager.NavigateTo("/admin/brands?updated=1", forceLoad: true);
+        else { _errorMessage = error; _isSubmitting = false; }
+    }
+}

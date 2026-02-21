@@ -1,12 +1,13 @@
+using CapheVanPhong.Application.Services;
 using CapheVanPhong.Domain.Interfaces;
 using CapheVanPhong.Infrastructure.Persistence;
 using CapheVanPhong.Infrastructure.Persistence.Repositories;
 using CapheVanPhong.Infrastructure.Seeding;
+using CapheVanPhong.Infrastructure.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Identity.Core;
 
 namespace CapheVanPhong.Infrastructure;
 
@@ -41,12 +42,20 @@ public static class DependencyInjection
             options.ExpireTimeSpan = TimeSpan.FromDays(30);
         });
 
-        // Repositories
+        // Generic repository
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        // Specific repositories
+        services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IBrandRepository, BrandRepository>();
+        services.AddScoped<IProductRepository, ProductRepository>();
+
         // Seeder
         services.AddScoped<DatabaseSeeder>();
+
+        // File storage
+        services.AddScoped<IFileStorageService, FileStorageService>();
 
         return services;
     }

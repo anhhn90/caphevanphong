@@ -51,20 +51,51 @@ namespace CapheVanPhong.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Brands",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Slug = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
+                    LogoName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Brands", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Categories",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Slug = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    ImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    ImageName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false, defaultValue: true),
+                    ParentId = table.Column<int>(type: "int", nullable: true),
+                    Level = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Categories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Categories_Categories_ParentId",
+                        column: x => x.ParentId,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -203,11 +234,23 @@ namespace CapheVanPhong.Infrastructure.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    ImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Slug = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: true),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: true),
+                    Origin = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Model = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    NumberOfGroupHeads = table.Column<int>(type: "int", nullable: true),
+                    Voltage = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Power = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Dimensions = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Weight = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Condition = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    WarrantyPeriod = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    SalesRegion = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    Capacity = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Material = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
                     IsAvailable = table.Column<bool>(type: "bit", nullable: false),
-                    CategoryId = table.Column<int>(type: "int", nullable: false),
+                    BrandId = table.Column<int>(type: "int", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
@@ -215,9 +258,9 @@ namespace CapheVanPhong.Infrastructure.Migrations
                 {
                     table.PrimaryKey("PK_Products", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Products_Categories_CategoryId",
-                        column: x => x.CategoryId,
-                        principalTable: "Categories",
+                        name: "FK_Products_Brands_BrandId",
+                        column: x => x.BrandId,
+                        principalTable: "Brands",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -248,6 +291,54 @@ namespace CapheVanPhong.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_OrderItems_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductCategories",
+                columns: table => new
+                {
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    CategoryId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductCategories", x => new { x.ProductId, x.CategoryId });
+                    table.ForeignKey(
+                        name: "FK_ProductCategories_Categories_CategoryId",
+                        column: x => x.CategoryId,
+                        principalTable: "Categories",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_ProductCategories_Products_ProductId",
+                        column: x => x.ProductId,
+                        principalTable: "Products",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "ProductImages",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
+                    ImageName = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    IsMain = table.Column<bool>(type: "bit", nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false, defaultValue: 0),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ProductImages", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ProductImages_Products_ProductId",
                         column: x => x.ProductId,
                         principalTable: "Products",
                         principalColumn: "Id",
@@ -294,6 +385,23 @@ namespace CapheVanPhong.Infrastructure.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Brands_Slug",
+                table: "Brands",
+                column: "Slug",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_ParentId",
+                table: "Categories",
+                column: "ParentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Categories_Slug",
+                table: "Categories",
+                column: "Slug",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_OrderId",
                 table: "OrderItems",
                 column: "OrderId");
@@ -304,35 +412,37 @@ namespace CapheVanPhong.Infrastructure.Migrations
                 column: "ProductId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Products_CategoryId",
-                table: "Products",
+                name: "IX_ProductCategories_CategoryId",
+                table: "ProductCategories",
                 column: "CategoryId");
 
-            // Seed default roles
-            migrationBuilder.InsertData(
-                table: "AspNetRoles",
-                columns: new[] { "Id", "Name", "NormalizedName", "ConcurrencyStamp" },
-                values: new object[,]
-                {
-                    { "a2c1e0d9-c3d4-e5f6-a7b8-901234567890", "SuperAdmin", "SUPERADMIN", "a2c1e0d9-c3d4-e5f6-a7b8-901234560000" },
-                    { "b3d2e1f0-a1b2-c3d4-e5f6-789012345678", "Admin", "ADMIN", "b3d2e1f0-a1b2-c3d4-e5f6-789012340000" },
-                    { "c4e3f2a1-b2c3-d4e5-f6a7-890123456789", "User",  "USER",  "c4e3f2a1-b2c3-d4e5-f6a7-890123450000" }
-                });
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductImages_ProductId_DisplayOrder",
+                table: "ProductImages",
+                columns: new[] { "ProductId", "DisplayOrder" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_ProductImages_ProductId_IsMain",
+                table: "ProductImages",
+                columns: new[] { "ProductId", "IsMain" },
+                unique: true,
+                filter: "[IsMain] = 1");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_BrandId",
+                table: "Products",
+                column: "BrandId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_Slug",
+                table: "Products",
+                column: "Slug",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DeleteData(
-                table: "AspNetRoles",
-                keyColumn: "Id",
-                keyValues: new object[]
-                {
-                    "a2c1e0d9-c3d4-e5f6-a7b8-901234567890",
-                    "b3d2e1f0-a1b2-c3d4-e5f6-789012345678",
-                    "c4e3f2a1-b2c3-d4e5-f6a7-890123456789"
-                });
-
             migrationBuilder.DropTable(
                 name: "AspNetRoleClaims");
 
@@ -352,6 +462,12 @@ namespace CapheVanPhong.Infrastructure.Migrations
                 name: "OrderItems");
 
             migrationBuilder.DropTable(
+                name: "ProductCategories");
+
+            migrationBuilder.DropTable(
+                name: "ProductImages");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
@@ -361,10 +477,13 @@ namespace CapheVanPhong.Infrastructure.Migrations
                 name: "Orders");
 
             migrationBuilder.DropTable(
+                name: "Categories");
+
+            migrationBuilder.DropTable(
                 name: "Products");
 
             migrationBuilder.DropTable(
-                name: "Categories");
+                name: "Brands");
         }
     }
 }

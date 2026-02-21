@@ -3,34 +3,27 @@
 
 /* Navigation */
 
-$(document).ready(function(){
-/*
-  $(window).resize(function()
-  {
-    if($(window).width() >= 765){
-      $(".sidebar #nav").slideDown(350);
-    }
-    else{
-      $(".sidebar #nav").slideUp(350); 
-    }
-  }); */
-  
-   $(".has_sub > a").click(function(e){
+function initMenu() {
+  // Use event delegation so handlers survive Blazor DOM re-renders
+  $(document).off('click.sidemenu', '.has_sub > a').on('click.sidemenu', '.has_sub > a', function(e) {
     e.preventDefault();
     var menu_li = $(this).parent("li");
     var menu_ul = $(this).next("ul");
 
-    if(menu_li.hasClass("open")){
+    if (menu_li.hasClass("open")) {
       menu_ul.slideUp(350);
-      menu_li.removeClass("open")
-    }
-    else{
+      menu_li.removeClass("open");
+    } else {
       $("#nav > li > ul").slideUp(350);
       $("#nav > li").removeClass("open");
       menu_ul.slideDown(350);
       menu_li.addClass("open");
     }
   });
+}
+
+$(document).ready(function(){
+  initMenu();
 
 /* Old Code 
 
