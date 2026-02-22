@@ -52,6 +52,8 @@ public static class DependencyInjection
         services.AddScoped<IProductRepository, ProductRepository>();
         services.AddScoped<IHotNewsRepository, HotNewsRepository>();
         services.AddScoped<ICustomerRepository, CustomerRepository>();
+        services.AddScoped<IBlogCategoryRepository, BlogCategoryRepository>();
+        services.AddScoped<IBlogRepository, BlogRepository>();
 
         // Seeder
         services.AddScoped<DatabaseSeeder>();

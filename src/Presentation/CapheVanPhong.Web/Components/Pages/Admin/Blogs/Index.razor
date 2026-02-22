@@ -1,0 +1,205 @@
+@page "/admin/blogs"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+
+@inject IBlogService BlogService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Blogs - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-file-text-o"></i> Blogs (Bài Viết)</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Blogs</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+
+        @if (!string.IsNullOrEmpty(_successMessage))
+        {
+            <div class="alert alert-success alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="fa fa-check-circle"></i> @_successMessage
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="fa fa-exclamation-circle"></i> @_errorMessage
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="widget wblue">
+                    <div class="widget-head">
+                        <div class="pull-left">All Blogs</div>
+                        <div class="pull-right">
+                            <a href="/admin/blogs/create" class="btn btn-primary btn-sm">
+                                <i class="fa fa-plus"></i> Add New
+                            </a>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="widget-content">
+                        <div class="padd">
+                            @if (_isLoading)
+                            {
+                                <p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</p>
+                            }
+                            else if (_items.Count == 0)
+                            {
+                                <p class="text-muted">No blogs yet. <a href="/admin/blogs/create">Create one</a>.</p>
+                            }
+                            else
+                            {
+                                <table class="table table-striped table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:50px">#</th>
+                                            <th style="width:160px">Category</th>
+                                            <th>Title</th>
+                                            <th style="width:60px">Image</th>
+                                            <th style="width:100px">Status</th>
+                                            <th style="width:130px">Created</th>
+                                            <th style="width:100px">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in _items)
+                                        {
+                                            <tr>
+                                                <td>@item.Id</td>
+                                                <td>
+                                                    <span class="label label-info">@item.Category?.Name</span>
+                                                </td>
+                                                <td>@item.Title</td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(item.ImageName))
+                                                    {
+                                                        <i class="fa fa-image text-success" title="Has image"></i>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="fa fa-image text-muted" title="No image"></i>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (item.IsActive)
+                                                    {
+                                                        <span class="label label-success">Active</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="label label-default">Inactive</span>
+                                                    }
+                                                </td>
+                                                <td>@item.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>
+                                                    <a href="/admin/blogs/edit/@item.Id" class="btn btn-xs btn-default" title="Edit">
+                                                        <i class="fa fa-pencil"></i>
+                                                    </a>
+                                                    <button class="btn btn-xs btn-danger" title="Delete"
+                                                            @onclick="() => ConfirmDelete(item.Id, item.Title)">
+                                                        <i class="fa fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@* Delete confirmation modal *@
+@if (_deleteId.HasValue)
+{
+    <div class="modal fade in" style="display:block; background:rgba(0,0,0,.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Confirm Delete</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Delete blog "<strong>@_deleteTitle</strong>"? This cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" @onclick="CancelDelete">Cancel</button>
+                    <button class="btn btn-danger" @onclick="ExecuteDeleteAsync" disabled="@_isDeleting">
+                        @if (_isDeleting) { <i class="fa fa-spinner fa-spin"></i> } else { <i class="fa fa-trash"></i> }
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<CapheVanPhong.Domain.Entities.Blog> _items = [];
+    private bool _isLoading = true;
+    private string? _successMessage;
+    private string? _errorMessage;
+    private int? _deleteId;
+    private string? _deleteTitle;
+    private bool _isDeleting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(NavigationManager.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        if (query["created"] == "1") _successMessage = "Blog created successfully.";
+        if (query["updated"] == "1") _successMessage = "Blog updated successfully.";
+        if (query["deleted"] == "1") _successMessage = "Blog deleted successfully.";
+
+        _items = (await BlogService.GetAllAsync()).ToList();
+        _isLoading = false;
+    }
+
+    private void ConfirmDelete(int id, string title)
+    {
+        _deleteId = id;
+        _deleteTitle = title;
+        _errorMessage = null;
+    }
+
+    private void CancelDelete()
+    {
+        _deleteId = null;
+        _deleteTitle = null;
+    }
+
+    private async Task ExecuteDeleteAsync()
+    {
+        if (!_deleteId.HasValue) return;
+        _isDeleting = true;
+        var (success, error) = await BlogService.DeleteAsync(_deleteId.Value);
+        if (success)
+        {
+            _items.RemoveAll(b => b.Id == _deleteId.Value);
+            _successMessage = "Blog deleted successfully.";
+        }
+        else
+            _errorMessage = error;
+
+        _deleteId = null;
+        _deleteTitle = null;
+        _isDeleting = false;
+    }
+}

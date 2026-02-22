@@ -1,0 +1,179 @@
+@page "/admin/blog-categories/edit/{Id:int}"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+
+@inject IBlogCategoryService BlogCategoryService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Blog Category - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-pencil"></i> Edit Blog Category (Chỉnh Sửa Danh Mục Blog)</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/blog-categories">Blog Categories</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Edit</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+
+        @if (!_loaded)
+        {
+            <p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</p>
+        }
+        else if (_notFound)
+        {
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i> Blog category not found.
+                <a href="/admin/blog-categories" class="btn btn-sm btn-default ml-2">Back to list</a>
+            </div>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fa fa-exclamation-circle"></i> @_errorMessage
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left">Blog Category Information</div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+                                <form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault>
+
+                                    <div class="form-group">
+                                        <label>Name (Tên danh mục) <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" value="@_name"
+                                               @oninput="OnNameInput" maxlength="200" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Slug <span class="text-muted">(auto-generated)</span></label>
+                                        <input type="text" class="form-control" @bind="_slug" maxlength="250" />
+                                        <p class="help-block">URL-friendly identifier. Auto-generated from name.</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Description (Mô tả) <span class="text-muted">(optional)</span></label>
+                                        <textarea class="form-control" rows="3" @bind="_description" maxlength="1000"></textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Display Order (Thứ tự hiển thị)</label>
+                                        <input type="number" class="form-control" @bind="_displayOrder" min="0" style="width:120px;" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label><input type="checkbox" @bind="_isActive" /> Active (Hoạt động)</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <a href="/admin/blog-categories" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+                                        <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                            @if (_isSubmitting)
+                                            {
+                                                <i class="fa fa-spinner fa-spin"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa fa-save"></i>
+                                            }
+                                            Save
+                                        </button>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private string _name = string.Empty;
+    private string _slug = string.Empty;
+    private string _description = string.Empty;
+    private bool _isActive = true;
+    private int _displayOrder;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+    private bool _loaded;
+    private bool _notFound;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var category = await BlogCategoryService.GetByIdAsync(Id);
+        if (category is null)
+        {
+            _notFound = true;
+            _loaded = true;
+            return;
+        }
+
+        _name = category.Name;
+        _slug = category.Slug;
+        _description = category.Description ?? string.Empty;
+        _isActive = category.IsActive;
+        _displayOrder = category.DisplayOrder;
+        _loaded = true;
+    }
+
+    private void OnNameInput(ChangeEventArgs e)
+    {
+        _name = e.Value?.ToString() ?? string.Empty;
+        _slug = CapheVanPhong.Application.Helpers.SlugHelper.Generate(_name);
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _errorMessage = "Name is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        var (success, error) = await BlogCategoryService.UpdateAsync(
+            id: Id,
+            name: _name.Trim(),
+            description: string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+            isActive: _isActive,
+            displayOrder: _displayOrder);
+
+        if (success)
+            NavigationManager.NavigateTo("/admin/blog-categories?updated=1", forceLoad: true);
+        else
+        {
+            _errorMessage = error;
+            _isSubmitting = false;
+        }
+    }
+}

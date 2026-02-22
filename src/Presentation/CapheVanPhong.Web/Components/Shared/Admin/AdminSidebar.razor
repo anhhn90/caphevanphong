@@ -51,6 +51,22 @@
             </a>
         </li>
 
+        <!-- Blog -->
+        <li class="has_sub @GetSubClass("/admin/blog-categories", "/admin/blogs")">
+            <a href="javascript:void(0)">
+                <i class="fa fa-pencil-square-o"></i> Blog
+                <span class="pull-right"><i class="fa fa-chevron-right"></i></span>
+            </a>
+            <ul>
+                <li class="@GetItemClass("/admin/blog-categories", exact: false)">
+                    <a href="/admin/blog-categories"><i class="fa fa-folder"></i> Blog Categories (Danh Mục Blog)</a>
+                </li>
+                <li class="@GetItemClass("/admin/blogs", exact: false)">
+                    <a href="/admin/blogs"><i class="fa fa-file-text-o"></i> Blogs (Bài Viết)</a>
+                </li>
+            </ul>
+        </li>
+
         <!-- Customers -->
         <li class="@GetOpenClass("/admin/customers", exact: false)">
             <a href="/admin/customers">

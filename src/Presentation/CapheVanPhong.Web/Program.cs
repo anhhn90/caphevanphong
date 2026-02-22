@@ -96,6 +96,11 @@ try
 
     await app.RunAsync();
 }
+catch (HostAbortedException)
+{
+    // Expected: EF Core tooling throws this to stop the design-time host after discovering DbContext.
+    // The migration ran successfully — this is not a real error.
+}
 catch (Exception ex)
 {
     Log.Fatal(ex, "Application terminated unexpectedly");

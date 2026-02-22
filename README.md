@@ -108,6 +108,46 @@ caphevanphong/
 }
 ```
 
+### Quick Start Guide
+
+Follow these steps to get the application up and running:
+
+#### Step 1: Apply Database Migrations
+
+Run the following command to create the database schema:
+
+```bash
+dotnet ef database update --project src/Infrastructure/CapheVanPhong.Infrastructure --startup-project src/Presentation/CapheVanPhong.Web
+```
+
+#### Step 2: Seed Initial Data (Optional but Recommended)
+
+Execute the SQL script to insert default data (brands, categories, products, customers, etc.):
+
+```bash
+sqlcmd -S localhost -d CapheVanPhong -i src/cpvp_data_initializer.sql
+```
+
+Or manually execute `src/cpvp_data_initializer.sql` in SQL Server Management Studio or your preferred SQL tool.
+
+#### Step 3: Default Users (Auto-Created on Startup)
+
+If you skipped Step 2, the application will automatically create default users and roles when it starts:
+
+| Email | Role | Default Password |
+|-------|------|------------------|
+| `superadmin@caphevanphong.vn` | SuperAdmin | `Password@123` |
+| `admin@caphevanphong.vn` | Admin | `Password@123` |
+| `user@caphevanphong.vn` | User | `Password@123` |
+
+> **⚠️ Important:** Change these default passwords immediately after first login in production environments!
+
+#### Step 4: Run the Application
+
+```bash
+dotnet run --project src/Presentation/CapheVanPhong.Web
+```
+
 ### Email Configuration (for Error Notifications)
 
 The application uses Serilog to send error logs via email. To enable this feature, you need to configure SMTP credentials using **User Secrets** (development) or environment variables (production).

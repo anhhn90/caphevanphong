@@ -22,6 +22,8 @@ public class AppDbContext : IdentityDbContext
     public DbSet<HotNews> HotNews => Set<HotNews>();
     public DbSet<Customer> Customers => Set<Customer>();
     public DbSet<CustomerRepresentative> CustomerRepresentatives => Set<CustomerRepresentative>();
+    public DbSet<BlogCategory> BlogCategories => Set<BlogCategory>();
+    public DbSet<Blog> Blogs => Set<Blog>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
