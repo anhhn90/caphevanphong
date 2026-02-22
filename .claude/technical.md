@@ -1,66 +1,7 @@
 # Technical Reference — Cà Phê Văn Phòng
 
-See [CLAUDE.md](../CLAUDE.md) for project overview, roles, and business rules.
-
----
-
-## Solution Structure
-
-```
-caphevanphong/
-├── src/
-│   ├── Core/
-│   │   ├── CapheVanPhong.Domain/          # Entities, Value Objects, Domain Events, Interfaces
-│   │   └── CapheVanPhong.Application/     # Use Cases, DTOs, Interfaces, Services, Validators
-│   ├── Infrastructure/
-│   │   └── CapheVanPhong.Infrastructure/  # EF Core DbContext, Repositories, Migrations, Identity
-│   └── Presentation/
-│       └── CapheVanPhong.Web/
-│           ├── Components/
-│           │   ├── Pages/
-│           │   │   ├── Public/            # Public-facing pages (menu, home, order tracking)
-│           │   │   └── Admin/             # Admin-only pages (dashboard, management)
-│           │   ├── Shared/                # Shared/reusable components
-│           │   └── Account/               # Login, Register, Logout pages
-│           ├── Layout/
-│           │   ├── PublicLayout.razor     # Layout for public area
-│           │   └── AdminLayout.razor      # Layout for admin area
-│           └── wwwroot/
-│               └── css/                   # Global styles (mobile-first, Vietnamese font)
-└── tests/
-    ├── CapheVanPhong.Domain.Tests/
-    ├── CapheVanPhong.Application.Tests/
-    └── CapheVanPhong.Infrastructure.Tests/
-```
-
----
-
-## Layer Responsibilities
-
-### Domain Layer (`CapheVanPhong.Domain`)
-- Contains **Entities**, **Value Objects**, **Enums**, **Domain Events**, and **Domain Exceptions**
-- Defines **repository interfaces** (e.g., `IRepository<T>`, `IUnitOfWork`)
-- No dependencies on other layers or external packages (except `MediatR.Contracts` if using domain events)
-
-### Application Layer (`CapheVanPhong.Application`)
-- Contains **Use Cases** (Commands/Queries using CQRS with MediatR)
-- Contains **DTOs**, **Validators** (FluentValidation), and **manual mapping methods** (no AutoMapper)
-- Depends only on the **Domain** layer
-- Defines interfaces for infrastructure services (e.g., `IEmailService`)
-
-### Infrastructure Layer (`CapheVanPhong.Infrastructure`)
-- Implements **EF Core DbContext** (`AppDbContext`)
-- Implements **Repository Pattern** and **Unit of Work**
-- Contains **EF Core Migrations**
-- Implements interfaces defined in Application/Domain layers
-- Depends on **Domain** and **Application** layers
-
-### Presentation Layer (`CapheVanPhong.Web`)
-- **Blazor Server-Side Rendering** components and pages
-- Registers all services via Dependency Injection
-- Depends on **Application** and **Infrastructure** layers (for DI registration only)
-- Handles **authentication UI** (login/logout/register) via ASP.NET Core Identity
-- Enforces **route-level authorization** using `[Authorize(Roles = "Admin,SuperAdmin")]` or `<AuthorizeView>`
+See [CLAUDE.md](./CLAUDE.md) for project overview, roles, and business rules.
+See [README.md](../README.md) for solution structure, layer responsibilities, tech stack, and CLI commands.
 
 ---
 
@@ -143,47 +84,9 @@ caphevanphong/
 ## Database Configuration
 
 - **Provider:** Microsoft SQL Server
-- **Connection String Key:** `ConnectionStrings:DefaultConnection`
 - **DbContext:** `AppDbContext` in Infrastructure layer
-- **Migrations:** Stored in `Infrastructure/Persistence/Migrations/`
-
-Example `appsettings.json`:
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=CapheVanPhong;Trusted_Connection=True;TrustServerCertificate=True;"
-  }
-}
-```
-
----
-
-## Key NuGet Packages
-
-| Package | Layer |
-|---|---|
-| `Microsoft.EntityFrameworkCore.SqlServer` | Infrastructure |
-| `Microsoft.EntityFrameworkCore.Tools` | Infrastructure |
-| `Microsoft.AspNetCore.Identity.EntityFrameworkCore` | Infrastructure |
-| `MediatR` | Application |
-| `FluentValidation` | Application |
-| `Microsoft.AspNetCore.Components` | Web (built-in) |
-| `Microsoft.AspNetCore.Components.Authorization` | Web (built-in) |
-
----
-
-## Commands Reference
-
-```bash
-# Add EF Core migration
-dotnet ef migrations add <MigrationName> --project src/Infrastructure/CapheVanPhong.Infrastructure --startup-project src/Presentation/CapheVanPhong.Web
-
-# Apply migrations
-dotnet ef database update --project src/Infrastructure/CapheVanPhong.Infrastructure --startup-project src/Presentation/CapheVanPhong.Web
-
-# Run the application
-dotnet run --project src/Presentation/CapheVanPhong.Web
-```
+- **Migrations:** Stored in `src/Infrastructure/CapheVanPhong.Infrastructure/Persistence/Migrations/`
+- **Seed:** Default roles and the SuperAdmin account are seeded at startup via `DatabaseSeeder`
 
 ---
 
@@ -215,11 +118,11 @@ The Public area **must** use the existing static HTML/CSS/JS design from `Public
 ### Template Pages
 | File | Purpose |
 |---|---|
-| `index.html` | Home page (carousel, about, services, menu preview, reservation, testimonials) |
+| `index.html` | Home page (carousel, about, services, product preview, testimonials) |
 | `about.html` | About page |
-| `menu.html` | Full menu listing |
+| `menu.html` | Product catalog listing |
 | `service.html` | Services page |
-| `reservation.html` | Table reservation page |
+| `reservation.html` | Contact/inquiry page |
 | `testimonial.html` | Customer testimonials |
 | `contact.html` | Contact page |
 
@@ -263,7 +166,7 @@ The Public area **must** use the existing static HTML/CSS/JS design from `Public
 | Section title | `<div class="section-title"><h4 class="text-primary text-uppercase">` |
 | Navbar | `<nav class="navbar navbar-expand-lg bg-none navbar-dark py-3">` |
 | Hero carousel | `<div id="blog-carousel" class="carousel slide overlay-bottom">` |
-| Menu item | `<div class="row align-items-center mb-5">` with `.menu-price` |
+| Product/menu item | `<div class="row align-items-center mb-5">` with `.menu-price` |
 | Footer | `<div class="container-fluid footer text-white ... overlay-top">` |
 | Back to top | `<a href="#" class="btn btn-lg btn-primary btn-lg-square back-to-top">` |
 | Primary color | Brown/coffee tone — defined in `style.css` as `--primary` |
@@ -271,7 +174,6 @@ The Public area **must** use the existing static HTML/CSS/JS design from `Public
 ### Blazor Integration Notes
 - Owl Carousel and TempusDominus must be initialized via `IJSRuntime` in `OnAfterRenderAsync`
 - Replace static `<a href="...html">` links with Blazor `<NavLink href="...">` components
-- The reservation form should be a Blazor `EditForm` with model binding
 
 ### File Placement
 ```

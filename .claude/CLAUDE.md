@@ -1,22 +1,14 @@
 # Project Instructions for Claude Code
 
 ## Project Overview
-**Cà Phê Văn Phòng** — a Vietnamese café website built with Blazor SSR (.NET 8+), Clean Architecture, EF Core, and MSSQL.
+
+**Cà Phê Văn Phòng** is a B2B platform for renting coffee machines and supplying premium coffee beans to office customers. It is **not** a café or coffee shop website.
 
 Two distinct areas:
-- **Public Area** — accessible to all visitors; authenticated `User` role holders can view/manage their own orders
-- **Admin Area** — restricted to `Admin` and `SuperAdmin` roles; full management of the café
+- **Public Area** — accessible to all visitors (Vietnamese UI); authenticated `User` role holders can view/manage their own orders
+- **Admin Area** — restricted to `Admin` and `SuperAdmin` roles; a **generic-purpose** back-office dashboard for managing the business (products, categories, brands, orders, users). Admin UI text is in English and should not be tightly coupled to coffee-domain vocabulary — keep labels generic (e.g. "Products", "Categories", not "Menu Items", "Coffee Types").
 
-For technical architecture, coding conventions, and template integration details, see [docs/technical.md](docs/technical.md).
-
----
-
-## Technology Stack
-- **Framework:** Blazor Server-Side Rendering (.NET 8+)
-- **Architecture:** Clean Architecture (Domain → Application → Infrastructure → Presentation)
-- **ORM:** Entity Framework Core + MSSQL
-- **Auth:** ASP.NET Core Identity with RBAC
-- **UI:** Bootstrap 3 (Admin area), Bootstrap 4 (Public area) — mobile-first
+For coding conventions and template integration details, see [technical.md](technical.md).
 
 ---
 
@@ -25,9 +17,9 @@ For technical architecture, coding conventions, and template integration details
 | Role | Description |
 |---|---|
 | `SuperAdmin` | Highest privilege. Can do everything `Admin` can, **plus** create/edit/delete `SuperAdmin` accounts. Seeded at runtime via `DatabaseSeeder`. |
-| `Admin` | Full Admin area access. Can manage menu, orders, and non-SuperAdmin users. |
-| `User` | Authenticated customer. Can view and edit their own orders in the Public area. |
-| *(anonymous)* | Can browse the public menu. |
+| `Admin` | Full Admin area access. Can manage products, orders, and non-SuperAdmin users. |
+| `User` | Authenticated customer. Can view and manage their own orders in the Public area. |
+| *(anonymous)* | Can browse the public product catalog. |
 
 ### SuperAdmin Restrictions
 Only `SuperAdmin` can:
@@ -44,17 +36,11 @@ These restrictions are enforced both in the **UI** (buttons/dropdowns hidden) an
 - SuperAdmin check in code: `HttpContext?.User.IsInRole("SuperAdmin")`
 - Redirect unauthorized users to `/account/login` (configured in `Program.cs`)
 
-### Identity Setup
-- ASP.NET Core Identity integrated with EF Core (`IdentityDbContext`)
-- Seed default roles (`SuperAdmin`, `Admin`, `User`) in the `InitialCreate` migration via `InsertData`
-- Seed the default SuperAdmin account at runtime via `DatabaseSeeder` (password hashing requires runtime execution)
-- Identity tables stored in the same MSSQL database
-
 ---
 
 ## Language & UI
 - **Public area**: all text, labels, and messages in **Vietnamese (Tiếng Việt)**
-- **Admin area**: all text, labels, and messages in **English**
+- **Admin area**: all text, labels, and messages in **English**, but for label, add additional Vietnamese translation in a curly brackets ()
 - Use a Vietnamese-compatible Google Font (e.g. **Be Vietnam Pro**) in `wwwroot/css/app.css`
 - All pages must be fully **mobile-first responsive**
 
@@ -71,3 +57,4 @@ These restrictions are enforced both in the **UI** (buttons/dropdowns hidden) an
 8. **Always** scope user data queries to the logged-in user's ID (never expose other users' data)
 9. **Always** use a Vietnamese-compatible font; write all UI text in **Vietnamese** (Public) and **English** (Admin)
 10. **Always** design components mobile-first — start with the smallest screen size and scale up
+11. **Never** modify EF Core migrations directly — developers will handle migration changes manually. Only announce if a migration needs to be changed after finishing implementation

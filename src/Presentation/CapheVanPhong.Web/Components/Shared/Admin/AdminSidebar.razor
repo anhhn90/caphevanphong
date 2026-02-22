@@ -25,7 +25,7 @@
             </ul>
         </li>
 
-        <!-- Menu Management -->
+        <!-- Catalog -->
         <li class="has_sub @GetSubClass("/admin/products", "/admin/categories", "/admin/brands")">
             <a href="javascript:void(0)">
                 <i class="fa fa-list-alt"></i> Catalog
@@ -33,19 +33,19 @@
             </a>
             <ul>
                 <li class="@GetItemClass("/admin/products", exact: false)">
-                    <a href="/admin/products"><i class="fa fa-tag"></i> Sản Phẩm</a>
+                    <a href="/admin/products"><i class="fa fa-tag"></i> Products</a>
                 </li>
                 <li class="@GetItemClass("/admin/categories", exact: false)">
-                    <a href="/admin/categories"><i class="fa fa-sitemap"></i> Danh Mục</a>
+                    <a href="/admin/categories"><i class="fa fa-sitemap"></i> Categories</a>
                 </li>
                 <li class="@GetItemClass("/admin/brands", exact: false)">
-                    <a href="/admin/brands"><i class="fa fa-certificate"></i> Thương Hiệu</a>
+                    <a href="/admin/brands"><i class="fa fa-certificate"></i> Brands</a>
                 </li>
             </ul>
         </li>
 
         <!-- Users -->
-        <li class="@GetOpenClass("/admin/users", exact: true)">
+        <li class="@GetOpenClass("/admin/users", exact: false)">
             <a href="/admin/users">
                 <i class="fa fa-users"></i> Users
             </a>
