@@ -19,6 +19,7 @@
                     <div class="dropdown-menu text-capitalize">
                         <NavLink href="/dat-ban" class="dropdown-item" ActiveClass="active">Đặt Bàn</NavLink>
                         <NavLink href="/danh-gia" class="dropdown-item" ActiveClass="active">Đánh Giá</NavLink>
+                        <NavLink href="/tin-hot" class="dropdown-item" ActiveClass="active">Tin Hot</NavLink>
                     </div>
                 </div>
                 <NavLink href="/lien-he" class="nav-item nav-link" ActiveClass="active">Liên Hệ</NavLink>
@@ -32,7 +33,7 @@
                             <div class="dropdown-menu text-capitalize">
                                 <AuthorizeView Roles="Admin, SuperAdmin">
                                     <Authorized Context="adminCtx">
-                                        <a href="/admin" class="dropdown-item">Quản Trị</a>
+                                        <a href="#" class="dropdown-item" onclick="window.location='/admin'; return false;">Quản Trị</a>
                                     </Authorized>
                                 </AuthorizeView>
                                 <a href="/don-hang-cua-toi" class="dropdown-item">Đơn Hàng Của Tôi</a>

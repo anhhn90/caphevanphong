@@ -1,3 +1,4 @@
+using CapheVanPhong.Application.Services;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -9,15 +10,18 @@ public class HomeBase : ComponentBase
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Inject] private ILogger<HomeBase> Logger { get; set; } = default!;
+    [Inject] private IHotNewsService HotNewsService { get; set; } = default!;
 
     protected List<MenuItemViewModel> HotCoffeeItems { get; private set; } = new();
     protected List<MenuItemViewModel> ColdCoffeeItems { get; private set; } = new();
     protected List<TestimonialViewModel> Testimonials { get; private set; } = new();
+    protected List<HotNewsItem> ActiveHotNews { get; private set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadMenuItemsAsync();
         await LoadTestimonialsAsync();
+        await LoadActiveHotNewsAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -26,6 +30,24 @@ public class HomeBase : ComponentBase
         {
             await InitializeCarouselAsync();
             await InitializeTestimonialCarouselAsync();
+        }
+    }
+
+    private async Task LoadActiveHotNewsAsync()
+    {
+        try
+        {
+            var news = await HotNewsService.GetActiveAsync();
+            ActiveHotNews = news.Select(n => new HotNewsItem(
+                Id: n.Id,
+                Title: n.Title,
+                Content: n.Content,
+                ImageUrl: string.IsNullOrEmpty(n.ImageName) ? null : $"/public/img/hotnews/{n.ImageName}"
+            )).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not load active hot news.");
         }
     }
 
@@ -111,7 +133,8 @@ public class HomeBase : ComponentBase
         }
     }
 
-    // View Models (inner records for simplicity — replace with DTOs from Application layer later)
+    // View Models
     protected record MenuItemViewModel(string Name, string Description, decimal Price, string ImageUrl);
     protected record TestimonialViewModel(string Name, string Profession, string Content, string ImageUrl);
+    protected record HotNewsItem(int Id, string Title, string Content, string? ImageUrl);
 }

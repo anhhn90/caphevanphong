@@ -43,6 +43,66 @@
 <script src="public/lib/tempusdominus/js/tempusdominus-bootstrap-4.min.js"></script>
 <script src="public/js/main.js"></script>
 
+<script>
+    // Hot News popup helper — called from HomeBase via JS interop
+    window.hotNewsHelper = {
+        show: function (newsItems) {
+            var now = Date.now();
+            var threeDays = 3 * 24 * 60 * 60 * 1000;
+
+            // Filter out news dismissed within the last 3 days
+            var toShow = newsItems.filter(function (n) {
+                var key = 'hot_news_dismissed_' + n.id;
+                var dismissed = localStorage.getItem(key);
+                if (!dismissed) return true;
+                return (now - parseInt(dismissed)) > threeDays;
+            });
+
+            if (toShow.length === 0) return;
+
+            var news = toShow[0];
+
+            document.getElementById('hotNewsTitle').textContent = news.title;
+            document.getElementById('hotNewsContent').innerHTML = news.content;
+
+            var img = document.getElementById('hotNewsImage');
+            if (news.imageUrl) {
+                img.src = news.imageUrl;
+                img.alt = news.title;
+                img.classList.remove('d-none');
+            } else {
+                img.classList.add('d-none');
+            }
+
+            // "Do not remind" button marks this news as dismissed
+            document.getElementById('hotNewsDismiss').onclick = function () {
+                localStorage.setItem('hot_news_dismissed_' + news.id, now.toString());
+                $('#hotNewsModal').modal('hide');
+            };
+
+            // Show popup after 10 seconds
+            setTimeout(function () {
+                if (typeof $ !== 'undefined') {
+                    $('#hotNewsModal').modal({ backdrop: true, keyboard: true });
+                    $('#hotNewsModal').modal('show');
+                }
+            }, 10000);
+        }
+    };
+
+    // Auto-trigger: read embedded JSON data rendered server-side
+    (function () {
+        var el = document.getElementById('hot-news-data');
+        if (!el) return;
+        try {
+            var data = JSON.parse(el.textContent || el.innerHTML);
+            if (Array.isArray(data) && data.length > 0) {
+                window.hotNewsHelper.show(data);
+            }
+        } catch (e) { /* ignore parse errors */ }
+    })();
+</script>
+
 @code {
     private IDisposable? _locationChangingRegistration;
 

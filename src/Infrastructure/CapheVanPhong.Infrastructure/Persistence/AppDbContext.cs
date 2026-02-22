@@ -19,6 +19,7 @@ public class AppDbContext : IdentityDbContext
     public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<HotNews> HotNews => Set<HotNews>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

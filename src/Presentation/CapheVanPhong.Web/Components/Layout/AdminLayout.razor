@@ -37,7 +37,7 @@
                         <i class="fa fa-user"></i> @_adminName <b class="caret"></b>
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a href="/"><i class="fa fa-home"></i> View Site</a></li>
+                        <li><a href="#" onclick="window.location='/'; return false;"><i class="fa fa-home"></i> View Site</a></li>
                         <li class="divider"></li>
                         <li><a href="/account/logout"><i class="fa fa-sign-out"></i> Logout</a></li>
                     </ul>
@@ -134,6 +134,21 @@
 <script src="admin/js/filter.js"></script>
 <script src="admin/js/custom.js"></script>
 <script src="admin/js/charts.js"></script>
+
+<script>
+    // Syncs CLEditor iframe content back to its hidden textarea, then returns the value.
+    // Called from Blazor JS interop before form submit.
+    window.cleditorHelper = {
+        getValue: function (elementId) {
+            if (typeof $ !== 'undefined' && typeof $.fn.cleditor !== 'undefined') {
+                var editors = $('#' + elementId).cleditor();
+                if (editors.length > 0) editors[0].updateTextArea();
+            }
+            var el = document.getElementById(elementId);
+            return el ? el.value : '';
+        }
+    };
+</script>
 
 @code {
     private IDisposable? _locationChangingRegistration;
