@@ -20,6 +20,8 @@ public class AppDbContext : IdentityDbContext
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<HotNews> HotNews => Set<HotNews>();
+    public DbSet<Customer> Customers => Set<Customer>();
+    public DbSet<CustomerRepresentative> CustomerRepresentatives => Set<CustomerRepresentative>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

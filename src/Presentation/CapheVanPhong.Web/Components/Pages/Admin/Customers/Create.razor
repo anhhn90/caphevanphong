@@ -1,0 +1,171 @@
+@page "/admin/customers/create"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject ICustomerService CustomerService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Create Customer - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-plus"></i> Create Customer (Thêm khách hàng)</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/customers">Customers</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Create</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="fa fa-exclamation-circle"></i> @_errorMessage
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-8">
+                <div class="widget">
+                    <div class="widget-head">
+                        <div class="pull-left">Customer Information</div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="widget-content">
+                        <div class="padd">
+                            <form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault>
+
+                                <div class="form-group">
+                                    <label>Company Name (Tên công ty) <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" @bind="_name" maxlength="200" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Description (Mô tả) <span class="text-muted">(optional)</span></label>
+                                    <textarea class="form-control" rows="3" @bind="_description" maxlength="1000"></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Logo <span class="text-muted">(optional)</span></label>
+                                    <InputFile OnChange="OnLogoSelected" accept="image/*" class="form-control" />
+                                    <p class="help-block">Company logo displayed on the home page. Max 5 MB.</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Display Order (Thứ tự hiển thị)</label>
+                                    <input type="number" class="form-control" @bind="_displayOrder" min="0" style="width:120px;" />
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label>
+                                            <input type="checkbox" @bind="_isGoldCustomer" />
+                                            <i class="fa fa-star text-warning"></i> Gold Customer — show on home page (Khách hàng vàng)
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label><input type="checkbox" @bind="_isActive" /> Active (Hoạt động)</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <a href="/admin/customers" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+                                    <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                        @if (_isSubmitting)
+                                        {
+                                            <i class="fa fa-spinner fa-spin"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-save"></i>
+                                        }
+                                        Save
+                                    </button>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private bool _isGoldCustomer;
+    private bool _isActive = true;
+    private int _displayOrder;
+    private IBrowserFile? _logoFile;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    private void OnLogoSelected(InputFileChangeEventArgs e)
+    {
+        _logoFile = e.File;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _errorMessage = "Company name is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        Stream? logoStream = null;
+        string? logoFileName = null;
+
+        if (_logoFile is not null)
+        {
+            logoStream = _logoFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            logoFileName = _logoFile.Name;
+        }
+
+        try
+        {
+            var (success, error) = await CustomerService.CreateAsync(
+                name: _name.Trim(),
+                description: string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+                isGoldCustomer: _isGoldCustomer,
+                isActive: _isActive,
+                displayOrder: _displayOrder,
+                logoStream: logoStream,
+                logoFileName: logoFileName);
+
+            if (success)
+                NavigationManager.NavigateTo("/admin/customers?created=1", forceLoad: true);
+            else
+            {
+                _errorMessage = error;
+                _isSubmitting = false;
+            }
+        }
+        finally
+        {
+            if (logoStream is not null)
+                await logoStream.DisposeAsync();
+        }
+    }
+}

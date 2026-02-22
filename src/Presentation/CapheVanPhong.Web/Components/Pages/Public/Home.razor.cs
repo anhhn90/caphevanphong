@@ -11,17 +11,20 @@ public class HomeBase : ComponentBase
     [Inject] private NavigationManager NavigationManager { get; set; } = default!;
     [Inject] private ILogger<HomeBase> Logger { get; set; } = default!;
     [Inject] private IHotNewsService HotNewsService { get; set; } = default!;
+    [Inject] private ICustomerService CustomerService { get; set; } = default!;
 
     protected List<MenuItemViewModel> HotCoffeeItems { get; private set; } = new();
     protected List<MenuItemViewModel> ColdCoffeeItems { get; private set; } = new();
     protected List<TestimonialViewModel> Testimonials { get; private set; } = new();
     protected List<HotNewsItem> ActiveHotNews { get; private set; } = new();
+    protected List<GoldCustomerViewModel> GoldCustomers { get; private set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
         await LoadMenuItemsAsync();
         await LoadTestimonialsAsync();
         await LoadActiveHotNewsAsync();
+        await LoadGoldCustomersAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -71,18 +74,42 @@ public class HomeBase : ComponentBase
         return Task.CompletedTask;
     }
 
-    private Task LoadTestimonialsAsync()
+    private async Task LoadTestimonialsAsync()
     {
-        // TODO: Replace with actual Application layer query via MediatR
-        Testimonials = new List<TestimonialViewModel>
+        try
         {
-            new("Nguyễn Văn An", "Kỹ Sư Phần Mềm", "Cà phê ở đây rất ngon, không gian yên tĩnh rất phù hợp để làm việc. Tôi thường xuyên ghé đây mỗi sáng.", "public/img/testimonial-1.jpg"),
-            new("Trần Thị Bích", "Giáo Viên", "Mình rất thích không gian ấm cúng và cà phê thơm ngon tại đây. Nhân viên rất thân thiện và nhiệt tình.", "public/img/testimonial-2.jpg"),
-            new("Lê Hoàng Nam", "Doanh Nhân", "Địa điểm lý tưởng để gặp gỡ đối tác. Cà phê ngon, không gian đẹp và dịch vụ chuyên nghiệp.", "public/img/testimonial-3.jpg"),
-            new("Phạm Thị Lan", "Nhà Thiết Kế", "Tôi đã thử nhiều quán cà phê nhưng Cà Phê Văn Phòng vẫn là nơi tôi quay lại nhiều nhất.", "public/img/testimonial-4.jpg"),
-        };
+            var representatives = await CustomerService.GetTestimonialsForHomepageAsync();
+            Testimonials = representatives.Select(r => new TestimonialViewModel(
+                Name: $"{r.Title} {r.DisplayName}",
+                Profession: $"{r.Position} — {r.Customer.Name}",
+                Content: r.Comment ?? string.Empty,
+                ImageUrl: string.IsNullOrEmpty(r.AvatarName)
+                    ? "public/img/testimonial-1.jpg"
+                    : $"/public/img/representatives/{r.AvatarName}",
+                StarRating: r.StarRating
+            )).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not load testimonials.");
+        }
+    }
 
-        return Task.CompletedTask;
+    private async Task LoadGoldCustomersAsync()
+    {
+        try
+        {
+            var customers = await CustomerService.GetGoldCustomersForHomepageAsync();
+            GoldCustomers = customers.Select(c => new GoldCustomerViewModel(
+                Name: c.Name,
+                LogoUrl: string.IsNullOrEmpty(c.LogoName) ? null : $"/public/img/customers/{c.LogoName}",
+                Description: c.Description
+            )).ToList();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not load gold customers.");
+        }
     }
 
     private async Task InitializeCarouselAsync()
@@ -135,6 +162,7 @@ public class HomeBase : ComponentBase
 
     // View Models
     protected record MenuItemViewModel(string Name, string Description, decimal Price, string ImageUrl);
-    protected record TestimonialViewModel(string Name, string Profession, string Content, string ImageUrl);
+    protected record TestimonialViewModel(string Name, string Profession, string Content, string ImageUrl, int StarRating = 5);
     protected record HotNewsItem(int Id, string Title, string Content, string? ImageUrl);
+    protected record GoldCustomerViewModel(string Name, string? LogoUrl, string? Description);
 }

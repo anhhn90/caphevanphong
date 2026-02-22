@@ -223,30 +223,84 @@
 </div>
 <!-- Reservation End -->
 
-<!-- Testimonial Start -->
-<div class="container-fluid py-5">
-    <div class="container">
-        <div class="section-title">
-            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Đánh Giá</h4>
-            <h1 class="display-4">Khách Hàng Nói Gì</h1>
-        </div>
-        <div class="owl-carousel testimonial-carousel">
-            @foreach (var testimonial in Testimonials)
-            {
-                <div class="testimonial-item">
-                    <div class="d-flex align-items-center mb-3">
-                        <img class="img-fluid" src="@testimonial.ImageUrl" alt="@testimonial.Name">
-                        <div class="ml-3">
-                            <h4>@testimonial.Name</h4>
-                            <i>@testimonial.Profession</i>
+<!-- Gold Customers Start -->
+@if (GoldCustomers.Count > 0)
+{
+    <div class="container-fluid py-5 bg-light">
+        <div class="container">
+            <div class="section-title text-center mb-4">
+                <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Đối Tác</h4>
+                <h1 class="display-4">Khách Hàng Vàng</h1>
+            </div>
+            <div class="row justify-content-center">
+                @foreach (var customer in GoldCustomers)
+                {
+                    <div class="col-6 col-md-4 col-lg-3 mb-4">
+                        <div class="card text-center h-100 shadow-sm border-0">
+                            <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
+                                @if (!string.IsNullOrEmpty(customer.LogoUrl))
+                                {
+                                    <img src="@customer.LogoUrl" alt="@customer.Name"
+                                         class="img-fluid mb-3"
+                                         style="max-height:80px; max-width:160px; object-fit:contain;" />
+                                }
+                                else
+                                {
+                                    <div class="mb-3 d-flex align-items-center justify-content-center rounded-circle bg-primary text-white"
+                                         style="width:64px;height:64px;font-size:26px;font-weight:700;">
+                                        @(customer.Name.Length > 0 ? customer.Name[0].ToString().ToUpper() : "?")
+                                    </div>
+                                }
+                                <h6 class="font-weight-bold mb-1">@customer.Name</h6>
+                                @if (!string.IsNullOrEmpty(customer.Description))
+                                {
+                                    <small class="text-muted">@customer.Description</small>
+                                }
+                            </div>
                         </div>
                     </div>
-                    <p class="m-0">@testimonial.Content</p>
-                </div>
-            }
+                }
+            </div>
         </div>
     </div>
-</div>
+}
+<!-- Gold Customers End -->
+
+<!-- Testimonial Start -->
+@if (Testimonials.Count > 0)
+{
+    <div class="container-fluid py-5">
+        <div class="container">
+            <div class="section-title">
+                <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Đánh Giá</h4>
+                <h1 class="display-4">Khách Hàng Nói Gì</h1>
+            </div>
+            <div class="owl-carousel testimonial-carousel">
+                @foreach (var testimonial in Testimonials)
+                {
+                    <div class="testimonial-item">
+                        <div class="d-flex align-items-center mb-3">
+                            <img class="img-fluid img-circle" src="@testimonial.ImageUrl" alt="@testimonial.Name"
+                                 style="width:70px;height:70px;object-fit:cover;" />
+                            <div class="ml-3">
+                                <h4>@testimonial.Name</h4>
+                                <i>@testimonial.Profession</i>
+                                <div class="mt-1">
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        int star = s;
+                                        <i class="fa @(star <= testimonial.StarRating ? "fa-star" : "fa-star-o")" style="color:#ffc107;font-size:12px;"></i>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <p class="m-0">@testimonial.Content</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
 <!-- Testimonial End -->
 
 @if (ActiveHotNews.Count > 0)
