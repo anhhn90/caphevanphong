@@ -5,6 +5,57 @@ See [README.md](../README.md) for solution structure, layer responsibilities, te
 
 ---
 
+## Logging (Serilog)
+
+Serilog is configured in `Program.cs` via `builder.Host.UseSerilog(...)`. Settings are read from `appsettings.json`.
+
+### Sinks
+| Sink | Level | Notes |
+|------|-------|-------|
+| Console | Information+ (Debug+ in dev) | Structured text output |
+| File | Information+ | Rolling daily, 30-day retention — `logs/log-YYYYMMDD.txt` |
+| Email | Error+ | Only active when `Email:SmtpPassword` is set (skipped in dev) |
+
+### Email Configuration (`appsettings.json`)
+```json
+{
+  "Email": {
+    "ApplicationEmail": "nie.farm.coltd@gmail.com",
+    "AdminEmail":       "anhngochoang.it@gmail.com",
+    "SmtpHost":         "smtp.gmail.com",
+    "SmtpPort":         "587",
+    "SmtpUsername":     "nie.farm.coltd@gmail.com",
+    "SmtpPassword":     ""
+  }
+}
+```
+- Set `SmtpPassword` to a **Gmail App Password** (not your account password) — requires Gmail 2-Step Verification.
+- Leave `SmtpPassword` empty in development to disable the email sink.
+- In production, set it via the Windows environment variable **`Cpvp_Email_SmtpPassword`** (configured in the hosting control panel). Do not commit the password to `appsettings.json`.
+  - Why a custom name: shared Windows hosting panels often reject `__` (double-underscore), so the standard ASP.NET Core `Email__SmtpPassword` convention is avoided. `Program.cs` reads this variable explicitly and injects it into `builder.Configuration["Email:SmtpPassword"]`.
+
+### Using the Logger
+Inject `ILogger<T>` anywhere — Serilog is wired as the underlying provider:
+```csharp
+public class MyService(ILogger<MyService> logger)
+{
+    public void DoWork()
+    {
+        logger.LogInformation("Work started");
+        logger.LogError(ex, "Something failed");   // triggers email in production
+    }
+}
+```
+
+### Packages
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `Serilog.AspNetCore` | 10.0.0 | Core + ILogger bridge + Console sink |
+| `Serilog.Sinks.File` | 7.0.0 | Rolling file sink |
+| `Serilog.Sinks.Email` | 4.1.0 | SMTP email sink (MailKit-based) |
+
+---
+
 ## Coding Conventions
 
 ### General

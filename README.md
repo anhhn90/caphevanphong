@@ -65,7 +65,7 @@ caphevanphong/
 
 | Component | Technology |
 |-----------|------------|
-| Framework | Blazor Server-Side Rendering (.NET 8+) |
+| Framework | Blazor Server-Side Rendering (.NET 10) |
 | Architecture | Clean Architecture |
 | ORM | Entity Framework Core |
 | Database | Microsoft SQL Server |
@@ -73,6 +73,7 @@ caphevanphong/
 | UI Framework | Bootstrap 4 (Public) / Bootstrap 3 (Admin) |
 | CQRS | MediatR |
 | Validation | FluentValidation |
+| Logging | Serilog (Console + File + Email on Error) |
 
 ---
 
@@ -105,6 +106,54 @@ caphevanphong/
     "DefaultConnection": "Server=localhost;Database=CapheVanPhong;Trusted_Connection=True;TrustServerCertificate=True;"
   }
 }
+```
+
+### Email Configuration (for Error Notifications)
+
+The application uses Serilog to send error logs via email. To enable this feature, you need to configure SMTP credentials using **User Secrets** (development) or environment variables (production).
+
+#### Development Setup (User Secrets)
+
+Run the following command to add your SMTP password to User Secrets:
+
+```bash
+cd src/Presentation/CapheVanPhong.Web
+dotnet user-secrets init
+dotnet user-secrets set "Email:SmtpPassword" "your-16-char-app-password"
+```
+
+Or manually edit the secrets file:
+
+```bash
+# Open secrets in your editor
+dotnet user-secrets edit
+```
+
+Add the following content:
+
+```json
+{
+  "Email": {
+    "SmtpPassword": "your-16-char-app-password"
+  }
+}
+```
+
+> **Note:** The SMTP password should be a 16-character app password generated from your email provider (e.g., Google App Password for Gmail).
+
+#### Production Setup
+
+Set the environment variable `Cpvp_Email_SmtpPassword` on your production server:
+
+```bash
+# Linux/macOS
+export Cpvp_Email_SmtpPassword="your-16-char-app-password"
+
+# Windows (Command Prompt)
+set Cpvp_Email_SmtpPassword=your-16-char-app-password
+
+# Windows (PowerShell)
+$env:Cpvp_Email_SmtpPassword = "your-16-char-app-password"
 ```
 
 ### Useful Commands
