@@ -1,0 +1,200 @@
+@inherits LayoutComponentBase
+@inject IJSRuntime JS
+@inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@implements IDisposable
+@using CapheVanPhong.Web.Components.Shared.Admin
+@using Microsoft.AspNetCore.Components.Authorization
+
+<HeadContent>
+    <link href="admin/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="admin/css/font-awesome.min.css">
+    <link rel="stylesheet" href="admin/css/jquery-ui.css">
+    <link rel="stylesheet" href="admin/css/fullcalendar.css">
+    <link rel="stylesheet" href="admin/css/prettyPhoto.css">
+    <link rel="stylesheet" href="admin/css/rateit.css">
+    <link rel="stylesheet" href="admin/css/bootstrap-datetimepicker.min.css">
+    <link rel="stylesheet" href="admin/css/jquery.cleditor.css">
+    <link rel="stylesheet" href="admin/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="admin/css/jquery.onoff.css">
+    <link href="admin/css/style.css" rel="stylesheet">
+    <link href="admin/css/widgets.css" rel="stylesheet">
+</HeadContent>
+
+<!-- Top Navbar -->
+<div class="navbar navbar-fixed-top bs-docs-nav" role="banner">
+    <div class="conjtainer">
+        <div class="navbar-header">
+            <button class="navbar-toggle btn-navbar" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+                <span>Menu</span>
+            </button>
+            <a href="/admin" class="navbar-brand hidden-lg">Cà Phê Văn Phòng</a>
+        </div>
+        <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+            <ul class="nav navbar-nav pull-right">
+                <li class="dropdown pull-right">
+                    <a data-toggle="dropdown" class="dropdown-toggle" href="#">
+                        <i class="fa fa-user"></i> @_adminName <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#" onclick="window.location='/'; return false;"><i class="fa fa-home"></i> View Site</a></li>
+                        <li class="divider"></li>
+                        <li><a href="/account/logout"><i class="fa fa-sign-out"></i> Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- Header -->
+<header>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-5">
+                <div class="logo">
+                    <h1><a href="/admin"><span class="bold"> Admin</span></a></h1>
+                    <p class="meta">Admin Management System</p>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="header-data">
+                    <div class="hdata">
+                        <div class="mcol-left"><i class="fa fa-coffee bred"></i></div>
+                        <div class="mcol-right"><p><a href="/admin/orders">Orders</a></p></div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="hdata">
+                        <div class="mcol-left"><i class="fa fa-list bblue"></i></div>
+                        <div class="mcol-right"><p><a href="/admin/products">Products</a></p></div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="hdata">
+                        <div class="mcol-left"><i class="fa fa-users bgreen"></i></div>
+                        <div class="mcol-right"><p><a href="/admin/users">Users</a></p></div>
+                        <div class="clearfix"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Main content -->
+<div class="content">
+
+    <!-- Sidebar -->
+    <AdminSidebar />
+
+    <!-- Mainbar — each page renders its own page-head + matter inside @Body -->
+    <div class="mainbar">
+        @Body
+    </div>
+
+    <div class="clearfix"></div>
+</div>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <p class="copy">Copyright &copy; @DateTime.Now.Year | <a href="/">Cà Phê Văn Phòng</a></p>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<!-- Scroll to top -->
+<span class="totop"><a href="#"><i class="fa fa-chevron-up"></i></a></span>
+
+<!-- JavaScript Libraries -->
+<script src="admin/js/jquery.js"></script>
+<script src="admin/js/bootstrap.min.js"></script>
+<script src="admin/js/jquery-ui.min.js"></script>
+<script src="admin/js/fullcalendar.min.js"></script>
+<script src="admin/js/jquery.rateit.min.js"></script>
+<script src="admin/js/jquery.prettyPhoto.js"></script>
+<script src="admin/js/jquery.slimscroll.min.js"></script>
+<script src="admin/js/jquery.dataTables.min.js"></script>
+<script src="admin/js/excanvas.min.js"></script>
+<script src="admin/js/jquery.flot.js"></script>
+<script src="admin/js/jquery.flot.resize.js"></script>
+<script src="admin/js/jquery.flot.pie.js"></script>
+<script src="admin/js/jquery.flot.stack.js"></script>
+<script src="admin/js/jquery.noty.js"></script>
+<script src="admin/js/themes/default.js"></script>
+<script src="admin/js/layouts/bottom.js"></script>
+<script src="admin/js/layouts/topRight.js"></script>
+<script src="admin/js/layouts/top.js"></script>
+<script src="admin/js/sparklines.js"></script>
+<script src="admin/js/jquery.cleditor.min.js"></script>
+<script src="admin/js/bootstrap-datetimepicker.min.js"></script>
+<script src="admin/js/jquery.onoff.min.js"></script>
+<script src="admin/js/filter.js"></script>
+<script src="admin/js/custom.js"></script>
+<script src="admin/js/charts.js"></script>
+
+<script>
+    // Syncs CLEditor iframe content back to its hidden textarea, then returns the value.
+    // Called from Blazor JS interop before form submit.
+    window.cleditorHelper = {
+        getValue: function (elementId) {
+            if (typeof $ !== 'undefined' && typeof $.fn.cleditor !== 'undefined') {
+                var editors = $('#' + elementId).cleditor();
+                if (editors.length > 0) editors[0].updateTextArea();
+            }
+            var el = document.getElementById(elementId);
+            return el ? el.value : '';
+        }
+    };
+</script>
+
+@code {
+    private IDisposable? _locationChangingRegistration;
+    private string _adminName = "Admin";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _adminName = authState.User.Identity?.Name ?? "Admin";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _locationChangingRegistration = NavigationManager.RegisterLocationChangingHandler(OnLocationChanging);
+        }
+        await ReinitializeAdminJsAsync();
+    }
+
+    private async ValueTask OnLocationChanging(LocationChangingContext context)
+    {
+        await Task.CompletedTask;
+    }
+
+    private async Task ReinitializeAdminJsAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval", @"
+                if (typeof $ !== 'undefined') {
+                    if (typeof $.fn.slimScroll !== 'undefined') {
+                        $('.scroll-chat').slimScroll({ height: '200px' });
+                    }
+                    if (typeof initMenu === 'function') { initMenu(); }
+                }
+            ");
+        }
+        catch
+        {
+            // Ignore JS interop errors during prerendering
+        }
+    }
+
+    public void Dispose()
+    {
+        _locationChangingRegistration?.Dispose();
+    }
+}

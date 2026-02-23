@@ -1,0 +1,523 @@
+@page "/admin/products/edit/{Id:int}"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin, SuperAdmin")]
+@using CapheVanPhong.Application.Helpers
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject IProductService ProductService
+@inject ICategoryService CategoryService
+@inject IBrandService BrandService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Product - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-pencil"></i> Edit Product</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/products">Products</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Edit</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+        @if (!_loaded)
+        {
+            <p><i class="fa fa-spinner fa-spin"></i> Loading...</p>
+        }
+        else if (_notFound)
+        {
+            <div class="alert alert-danger">Product not found.</div>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fa fa-exclamation-circle"></i> @_errorMessage
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-10">
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left">Product Information</div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+                                <form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Product Name <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" @bind="_name" />
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Slug <span class="text-danger">*</span></label>
+                                                <input type="text" class="form-control" @bind="_slug" placeholder="e.g. breville-barista-express" />
+                                                <p class="help-block">SEO-friendly URL. Must be unique.</p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Brand <span class="text-danger">*</span></label>
+                                                <select class="form-control" @bind="_brandId">
+                                                    <option value="0">-- Select brand --</option>
+                                                    @foreach (var b in _brands)
+                                                    {
+                                                        <option value="@b.Id">@b.Name</option>
+                                                    }
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-group">
+                                                <label>Price</label>
+                                                <input type="number" class="form-control" @bind="_price" min="0" step="0.01" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Categories <span class="text-danger">*</span></label>
+                                        <div style="border:1px solid #ccc; border-radius:4px; padding:10px; max-height:220px; overflow-y:auto; background:#fff;">
+                                            @foreach (var (cat, depth) in GetCategoryTree())
+                                            {
+                                                var catId = cat.Id;
+                                                <div style="padding-left:@(depth * 20)px; margin-bottom:5px;">
+                                                    <label style="font-weight:normal; cursor:pointer; margin-bottom:0;">
+                                                        <input type="checkbox"
+                                                               checked="@_selectedCategoryIds.Contains(catId)"
+                                                               @onchange="e => ToggleCategory(catId, (bool)(e.Value ?? false))" />
+                                                        @cat.Name
+                                                        @if (depth == 0)
+                                                        {
+                                                            <span class="label label-default" style="margin-left:4px;">Root</span>
+                                                        }
+                                                        else if (depth == 1)
+                                                        {
+                                                            <span class="label label-info" style="margin-left:4px;">Sub</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="label label-primary" style="margin-left:4px;">Leaf</span>
+                                                        }
+                                                    </label>
+                                                </div>
+                                            }
+                                            @if (_allCategories.Count == 0)
+                                            {
+                                                <p class="text-muted">No categories available.</p>
+                                            }
+                                        </div>
+                                        <p class="help-block">Select one or more categories for this product.</p>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Number Of Group Heads</label>
+                                                <input type="number" class="form-control" @bind="_numberOfGroupHeads" min="0" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Origin</label>
+                                                <input type="text" class="form-control" @bind="_origin" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Model</label>
+                                                <input type="text" class="form-control" @bind="_model" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Voltage</label>
+                                                <input type="text" class="form-control" @bind="_voltage" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Power</label>
+                                                <input type="text" class="form-control" @bind="_power" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Dimensions</label>
+                                                <input type="text" class="form-control" @bind="_dimensions" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Weight</label>
+                                                <input type="text" class="form-control" @bind="_weight" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Condition</label>
+                                                <input type="text" class="form-control" @bind="_condition" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Warranty Period</label>
+                                                <input type="text" class="form-control" @bind="_warrantyPeriod" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Sales Region</label>
+                                                <input type="text" class="form-control" @bind="_salesRegion" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Capacity</label>
+                                                <input type="text" class="form-control" @bind="_capacity" />
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-group">
+                                                <label>Material</label>
+                                                <input type="text" class="form-control" @bind="_material" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Description</label>
+                                        <textarea class="form-control" rows="4" @bind="_description"></textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Current Images</label>
+                                        @if (_existingImages.Count == 0)
+                                        {
+                                            <p class="text-muted">No images.</p>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var image in _existingImages)
+                                            {
+                                                if (image.MarkedForDelete)
+                                                {
+                                                    continue;
+                                                }
+
+                                                <div class="well well-sm">
+                                                    <div class="row">
+                                                        <div class="col-md-8">
+                                                            <img src="@($"public/img/products/{image.ImageName}")"
+                                                                 alt="@image.ImageName"
+                                                                 style="width:60px;height:60px;object-fit:cover;border-radius:4px;" />
+                                                            <span style="margin-left:8px;">@image.ImageName</span>
+                                                        </div>
+                                                        <div class="col-md-4 text-right">
+                                                            <label class="radio-inline">
+                                                                <input type="radio"
+                                                                       name="main-image"
+                                                                       checked="@(_mainImageKey == image.Key)"
+                                                                       @onchange="() => _mainImageKey = image.Key" />
+                                                                Main
+                                                            </label>
+                                                            <label class="checkbox-inline" style="margin-left:8px;">
+                                                                <input type="checkbox" @bind="image.MarkedForDelete" />
+                                                                Delete
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Upload New Images</label>
+                                        <InputFile OnChange="OnNewImagesSelected" multiple accept="image/*" class="form-control" />
+                                    </div>
+
+                                    @if (_newImages.Count > 0)
+                                    {
+                                        <div class="form-group">
+                                            <label>New Images</label>
+                                            @for (var i = 0; i < _newImages.Count; i++)
+                                            {
+                                                var key = $"new:{i}";
+                                                <div class="radio">
+                                                    <label>
+                                                        <input type="radio" name="main-image" checked="@(_mainImageKey == key)" @onchange="() => _mainImageKey = key" />
+                                                        @_newImages[i].Name
+                                                    </label>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label><input type="checkbox" @bind="_isAvailable" /> Available</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <a href="/admin/products" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+                                        <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                            @if (_isSubmitting)
+                                            {
+                                                <i class="fa fa-spinner fa-spin"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa fa-save"></i>
+                                            }
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private List<CapheVanPhong.Domain.Entities.Category> _allCategories = [];
+    private List<CapheVanPhong.Domain.Entities.Brand> _brands = [];
+    private HashSet<int> _selectedCategoryIds = [];
+
+    private string _name = string.Empty;
+    private string _slug = string.Empty;
+    private int _brandId;
+    private bool _isAvailable = true;
+
+    private decimal? _price;
+    private string? _origin;
+    private string? _model;
+    private int? _numberOfGroupHeads;
+    private string? _voltage;
+    private string? _power;
+    private string? _dimensions;
+    private string? _weight;
+    private string? _condition;
+    private string? _warrantyPeriod;
+    private string? _salesRegion;
+    private string? _description;
+    private string? _capacity;
+    private string? _material;
+
+    private List<ExistingImageItem> _existingImages = [];
+    private List<IBrowserFile> _newImages = [];
+    private string? _mainImageKey;
+
+    private bool _loaded;
+    private bool _notFound;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allCategories = (await CategoryService.GetAllAsync()).ToList();
+        _brands = (await BrandService.GetAllAsync()).Where(b => b.IsActive).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name).ToList();
+
+        var product = await ProductService.GetByIdWithDetailsAsync(Id);
+        if (product is null)
+        {
+            _notFound = true;
+            _loaded = true;
+            return;
+        }
+
+        _name = product.Name;
+        _slug = product.Slug;
+        _brandId = product.BrandId ?? 0;
+        _isAvailable = product.IsAvailable;
+        _price = product.Price;
+        _origin = product.Origin;
+        _model = product.Model;
+        _numberOfGroupHeads = product.NumberOfGroupHeads;
+        _voltage = product.Voltage;
+        _power = product.Power;
+        _dimensions = product.Dimensions;
+        _weight = product.Weight;
+        _condition = product.Condition;
+        _warrantyPeriod = product.WarrantyPeriod;
+        _salesRegion = product.SalesRegion;
+        _description = product.Description;
+        _capacity = product.Capacity;
+        _material = product.Material;
+
+        foreach (var pc in product.ProductCategories)
+            _selectedCategoryIds.Add(pc.CategoryId);
+
+        _existingImages = product.ProductImages
+            .OrderBy(x => x.DisplayOrder)
+            .Select((x, index) => new ExistingImageItem
+            {
+                Key = $"existing:{index}",
+                ImageName = x.ImageName,
+                IsMain = x.IsMain
+            })
+            .ToList();
+
+        _mainImageKey = _existingImages.FirstOrDefault(x => x.IsMain)?.Key ?? _existingImages.FirstOrDefault()?.Key;
+
+        _loaded = true;
+    }
+
+    private IEnumerable<(CapheVanPhong.Domain.Entities.Category cat, int depth)> GetCategoryTree()
+    {
+        var roots = _allCategories.Where(c => c.ParentId == null).OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name);
+        foreach (var root in roots)
+        {
+            yield return (root, 0);
+            var children = _allCategories.Where(c => c.ParentId == root.Id).OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name);
+            foreach (var child in children)
+            {
+                yield return (child, 1);
+                var grandchildren = _allCategories.Where(c => c.ParentId == child.Id).OrderBy(c => c.DisplayOrder).ThenBy(c => c.Name);
+                foreach (var gc in grandchildren)
+                    yield return (gc, 2);
+            }
+        }
+    }
+
+    private void ToggleCategory(int id, bool isChecked)
+    {
+        if (isChecked) _selectedCategoryIds.Add(id);
+        else _selectedCategoryIds.Remove(id);
+    }
+
+    private void OnNewImagesSelected(InputFileChangeEventArgs e)
+    {
+        _newImages = e.GetMultipleFiles(20).ToList();
+        if (!string.IsNullOrEmpty(_mainImageKey))
+            return;
+
+        _mainImageKey = _newImages.Count > 0 ? "new:0" : null;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _errorMessage = "Product name cannot be empty.";
+            _isSubmitting = false;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_slug))
+        {
+            _errorMessage = "Slug cannot be empty.";
+            _isSubmitting = false;
+            return;
+        }
+        if (_selectedCategoryIds.Count == 0)
+        {
+            _errorMessage = "Please select at least one category.";
+            _isSubmitting = false;
+            return;
+        }
+        if (_brandId <= 0)
+        {
+            _errorMessage = "Please select a brand.";
+            _isSubmitting = false;
+            return;
+        }
+
+        var order = 0;
+
+        var keptImages = _existingImages
+            .Where(x => !x.MarkedForDelete)
+            .Select(x => new KeptImageInput(x.ImageName, _mainImageKey == x.Key, order++))
+            .ToList();
+
+        var uploads = _newImages
+            .Select((file, i) => new NewImageUpload(
+                Content: file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024),
+                OriginalFileName: file.Name,
+                IsMain: _mainImageKey == $"new:{i}",
+                DisplayOrder: order + i))
+            .ToList();
+
+        try
+        {
+            var (success, error) = await ProductService.UpdateAsync(
+                id: Id,
+                name: _name,
+                slug: _slug,
+                brandId: _brandId,
+                categoryIds: _selectedCategoryIds.ToList(),
+                isAvailable: _isAvailable,
+                price: _price,
+                origin: Normalize(_origin),
+                model: Normalize(_model),
+                numberOfGroupHeads: _numberOfGroupHeads,
+                voltage: Normalize(_voltage),
+                power: Normalize(_power),
+                dimensions: Normalize(_dimensions),
+                weight: Normalize(_weight),
+                condition: Normalize(_condition),
+                warrantyPeriod: Normalize(_warrantyPeriod),
+                salesRegion: Normalize(_salesRegion),
+                description: Normalize(_description),
+                capacity: Normalize(_capacity),
+                material: Normalize(_material),
+                keptImages: keptImages,
+                newImages: uploads);
+
+            if (success)
+                NavigationManager.NavigateTo("/admin/products?updated=1", forceLoad: true);
+            else
+            {
+                _errorMessage = error;
+                _isSubmitting = false;
+            }
+        }
+        finally
+        {
+            foreach (var upload in uploads)
+                await upload.Content.DisposeAsync();
+        }
+    }
+
+    private static string? Normalize(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private sealed class ExistingImageItem
+    {
+        public string Key { get; set; } = string.Empty;
+        public string ImageName { get; set; } = string.Empty;
+        public bool IsMain { get; set; }
+        public bool MarkedForDelete { get; set; }
+    }
+}

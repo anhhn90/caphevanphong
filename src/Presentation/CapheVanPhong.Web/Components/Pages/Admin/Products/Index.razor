@@ -1,0 +1,194 @@
+@page "/admin/products"
+@layout AdminLayout
+@attribute [Authorize(Roles = "Admin, SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+
+@inject IProductService ProductService
+@inject NavigationManager NavigationManager
+
+<PageTitle>Products - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-cube"></i> Products</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Products</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<form id="delete-form" method="post" @formname="delete-product" style="display:none;">
+    <AntiforgeryToken />
+    <input type="hidden" name="DeleteProductId" id="delete-product-id" value="" />
+</form>
+
+<div class="matter">
+    <div class="container">
+        @if (!string.IsNullOrEmpty(_successMessage))
+        {
+            <div class="alert alert-success alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="fa fa-check-circle"></i> @_successMessage
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="fa fa-exclamation-circle"></i> @_errorMessage
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="widget">
+                    <div class="widget-head">
+                        <div class="pull-left">All Products</div>
+                        <div class="pull-right">
+                            <a href="/admin/products/create" class="btn btn-success btn-sm">
+                                <i class="fa fa-plus"></i> Add Product
+                            </a>
+                        </div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="widget-content">
+                        <div class="padd table-responsive">
+                            <table class="table table-striped table-bordered table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Main Image</th>
+                                        <th>Name</th>
+                                        <th>Brand</th>
+                                        <th>Category</th>
+                                        <th>Price</th>
+                                        <th>Status</th>
+                                        <th>Images</th>
+                                        <th style="width:130px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @{int index = 1;}
+                                    @foreach (var p in _products)
+                                    {
+                                        var mainImage = p.ProductImages.FirstOrDefault(i => i.IsMain)?.ImageName
+                                            ?? p.ProductImages.FirstOrDefault()?.ImageName;
+                                        <tr>
+                                            <td>@index</td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(mainImage))
+                                                {
+                                                    <img src="@($"public/img/products/{mainImage}")"
+                                                         alt="@p.Name"
+                                                         style="width:50px;height:50px;object-fit:cover;border-radius:4px;" />
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">N/A</span>
+                                                }
+                                            </td>
+                                            <td><strong>@p.Name</strong></td>
+                                            <td>@(p.Brand?.Name ?? "-")</td>
+                                            <td>@(p.ProductCategories.FirstOrDefault()?.Category?.Name ?? "-")</td>
+                                            <td>@(p.Price.HasValue ? $"{p.Price.Value:N0} VND" : "-")</td>
+                                            <td>
+                                                @if (p.IsAvailable)
+                                                {
+                                                    <span class="label label-success">Available</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="label label-default">Unavailable</span>
+                                                }
+                                            </td>
+                                            <td>@p.ProductImages.Count</td>
+                                            <td>
+                                                <a href="/admin/products/edit/@p.Id" class="btn btn-xs btn-primary">
+                                                    <i class="fa fa-pencil"></i> Edit
+                                                </a>
+                                                <button type="button" class="btn btn-xs btn-danger"
+                                                        onclick="promptDelete(@p.Id, '@p.Name')">
+                                                    <i class="fa fa-trash"></i> Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        index++;
+                                    }
+                                    @if (_products.Count == 0)
+                                    {
+                                        <tr><td colspan="9" class="text-center text-muted">No products found.</td></tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title"><i class="fa fa-exclamation-triangle text-danger"></i> Confirm Delete</h4>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete product <strong id="modal-name"></strong>?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal"><i class="fa fa-times"></i> Cancel</button>
+                <button type="button" class="btn btn-danger" id="modal-confirm-btn"><i class="fa fa-trash"></i> Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function promptDelete(id, name) {
+        document.getElementById('delete-product-id').value = id;
+        document.getElementById('modal-name').textContent = name;
+        $('#deleteModal').modal('show');
+    }
+    document.getElementById('modal-confirm-btn').addEventListener('click', function () {
+        $('#deleteModal').modal('hide');
+        document.getElementById('delete-form').submit();
+    });
+</script>
+
+@code {
+    [SupplyParameterFromForm(FormName = "delete-product")]
+    private int? DeleteProductId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "created")] private string? Created { get; set; }
+    [SupplyParameterFromQuery(Name = "updated")] private string? Updated { get; set; }
+    [SupplyParameterFromQuery(Name = "deleted")] private string? Deleted { get; set; }
+
+    private List<CapheVanPhong.Domain.Entities.Product> _products = [];
+    private string? _successMessage;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (DeleteProductId.HasValue)
+        {
+            var (success, error) = await ProductService.DeleteAsync(DeleteProductId.Value);
+            if (success)
+                NavigationManager.NavigateTo("/admin/products?deleted=1", forceLoad: true);
+            else
+                _errorMessage = error;
+        }
+
+        if (Created == "1") _successMessage = "Product created successfully.";
+        if (Updated == "1") _successMessage = "Product updated successfully.";
+        if (Deleted == "1") _successMessage = "Product deleted successfully.";
+
+        var all = await ProductService.GetAllWithDetailsAsync();
+        _products = all.ToList();
+    }
+}

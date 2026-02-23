@@ -1,0 +1,109 @@
+@page "/gioi-thieu"
+@layout Layout
+@using CapheVanPhong.Web.Components.Layout
+@inherits AboutBase
+
+<PageTitle>Giới Thiệu - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 position-relative overlay-bottom">
+    <div class="d-flex flex-column align-items-center justify-content-center pt-0 pt-lg-5" style="min-height: 400px">
+        <h1 class="display-4 mb-3 mt-0 mt-lg-5 text-white text-uppercase">Giới Thiệu</h1>
+        <div class="d-inline-flex mb-lg-5">
+            <p class="m-0 text-white"><a class="text-white" href="/">Trang Chủ</a></p>
+            <p class="m-0 text-white px-2">/</p>
+            <p class="m-0 text-white">Giới Thiệu</p>
+        </div>
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- About Start -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Về Chúng Tôi</h4>
+            <h1 class="display-4">Phục Vụ Từ Năm 2019</h1>
+        </div>
+        <div class="row">
+            <div class="col-lg-4 py-0 py-lg-5">
+                <h1 class="mb-3">Câu Chuyện Của Chúng Tôi</h1>
+                <h5 class="mb-3">Cà Phê Văn Phòng — nơi bạn tìm thấy sự hứng khởi trong từng tách cà phê.</h5>
+                <p>Được thành lập từ năm 2019, Cà Phê Văn Phòng ra đời với tâm huyết mang trải nghiệm cao cấp đến cho khách hàng khối văn phòng bằng những tách cà phê nguyên chất, được chọn lọc kỹ càng từ những vùng trồng cà phê nổi tiếng của Việt Nam như Đà Lạt, Buôn Ma Thuột và Gia Lai; cùng với hệ thống máy pha chế chuyên nghiệp, hiện đại, gọn nhẹ với chi phí vô cùng hợp lý và dễ chịu.</p>
+                <a href="/thuc-don" class="btn btn-secondary font-weight-bold py-2 px-4 mt-2">Xem Thực Đơn</a>
+            </div>
+            <div class="col-lg-4 py-5 py-lg-0" style="min-height: 500px;">
+                <div class="position-relative h-100">
+                    <img class="position-absolute w-100 h-100" src="public/img/about.png" style="object-fit: cover;" alt="Về Cà Phê Văn Phòng">
+                </div>
+            </div>
+            <div class="col-lg-4 py-0 py-lg-5">
+                <h1 class="mb-3">Tầm Nhìn Của Chúng Tôi</h1>
+                <p>Chúng tôi mong muốn trở thành điểm đến quen thuộc của mọi người, nơi mà mỗi buổi sáng tại chính văn phòng làm việc bạn có thể bắt đầu ngày mới với một tách cà phê thơm ngon, gần gũi như ngôi nhà thứ hai của bạn.</p>
+                <h5 class="mb-3"><i class="fa fa-check text-primary mr-3"></i>Cà phê nguyên chất 100%</h5>
+                <h5 class="mb-3"><i class="fa fa-check text-primary mr-3"></i>Không gian làm việc quen thuộc</h5>
+                <h5 class="mb-3"><i class="fa fa-check text-primary mr-3"></i>Phục vụ chuyên nghiệp, nhanh gọn</h5>
+                <a href="/dat-ban" class="btn btn-primary font-weight-bold py-2 px-4 mt-2">Liên Hệ Ngay</a>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- About End -->
+
+<!-- Team Section Start -->
+<div class="container-fluid py-5 bg-light">
+    <div class="container">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Đội Ngũ Của Chúng Tôi</h4>
+            <h1 class="display-4">Những Con Người Tâm Huyết</h1>
+        </div>
+        <div class="row">
+            @foreach (var member in TeamMembers)
+            {
+                <div class="col-lg-3 col-md-6 mb-5 text-center">
+                    <div class="position-relative mb-4">
+                        <img class="img-fluid rounded-circle w-75" src="@member.ImageUrl" alt="@member.Name">
+                    </div>
+                    <h4>@member.Name</h4>
+                    <p class="text-primary font-weight-bold">@member.Role</p>
+                    <p>@member.Description</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- Team Section End -->
+
+<!-- Values Section Start -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Giá Trị Cốt Lõi</h4>
+            <h1 class="display-4">Chúng Tôi Cam Kết</h1>
+        </div>
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="text-center p-4">
+                    <i class="fa fa-3x fa-leaf text-primary mb-3"></i>
+                    <h4>Tự Nhiên & Thuần Chất</h4>
+                    <p>Chúng tôi cam kết chỉ sử dụng nguyên liệu tự nhiên, không phụ gia, không chất bảo quản để mang đến hương vị thuần khiết nhất.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="text-center p-4">
+                    <i class="fa fa-3x fa-heart text-primary mb-3"></i>
+                    <h4>Tận Tâm & Nhiệt Huyết</h4>
+                    <p>Mỗi tách cà phê được pha chế với tình yêu và sự tận tâm của đội ngũ barista chuyên nghiệp, giàu kinh nghiệm.</p>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="text-center p-4">
+                    <i class="fa fa-3x fa-users text-primary mb-3"></i>
+                    <h4>Cộng Đồng & Kết Nối</h4>
+                    <p>Cà Phê Văn Phòng không chỉ là nơi thưởng thức cà phê mà còn là không gian kết nối cộng đồng, giao lưu và sáng tạo.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Values Section End -->

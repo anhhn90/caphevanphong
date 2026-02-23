@@ -1,0 +1,249 @@
+@page "/admin/blogs/create"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject IBlogCategoryService BlogCategoryService
+@inject IBlogService BlogService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Create Blog - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-plus"></i> Create Blog (Thêm Bài Viết)</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/blogs">Blogs</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Create</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="fa fa-exclamation-circle"></i> @_errorMessage
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-10">
+                <div class="widget">
+                    <div class="widget-head">
+                        <div class="pull-left">Blog Information</div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="widget-content">
+                        <div class="padd">
+                            <form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault>
+
+                                <div class="form-group">
+                                    <label>Category (Danh mục) <span class="text-danger">*</span></label>
+                                    <select class="form-control" @bind="_categoryId" style="max-width:350px;">
+                                        <option value="0">-- Select a category --</option>
+                                        @foreach (var cat in _categories)
+                                        {
+                                            <option value="@cat.Id">@cat.Name</option>
+                                        }
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Title (Tiêu đề) <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" value="@_title"
+                                           @oninput="OnTitleInput" maxlength="300" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Slug <span class="text-muted">(auto-generated)</span></label>
+                                    <input type="text" class="form-control" @bind="_slug" maxlength="350" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Introduction (Giới thiệu) <span class="text-danger">*</span></label>
+                                    <textarea id="blog-introduction" class="form-control" rows="5"></textarea>
+                                    <p class="help-block">A short summary shown in the blog list page.</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Full Content (Nội dung đầy đủ) <span class="text-danger">*</span></label>
+                                    <textarea id="blog-full-content" class="form-control" rows="12"></textarea>
+                                    <p class="help-block">The full article content shown on the detail page.</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Image <span class="text-muted">(optional)</span></label>
+                                    <InputFile OnChange="OnImageSelected" accept="image/*" class="form-control" />
+                                    <p class="help-block">Featured image displayed in the blog list and detail pages. Max 5 MB.</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label><input type="checkbox" @bind="_isActive" /> Active (Hoạt động)</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <a href="/admin/blogs" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+                                    <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                        @if (_isSubmitting)
+                                        {
+                                            <i class="fa fa-spinner fa-spin"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-save"></i>
+                                        }
+                                        Save
+                                    </button>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private List<CapheVanPhong.Domain.Entities.BlogCategory> _categories = [];
+    private int _categoryId;
+    private string _title = string.Empty;
+    private string _slug = string.Empty;
+    private string _introduction = string.Empty;
+    private string _fullContent = string.Empty;
+    private bool _isActive = true;
+    private IBrowserFile? _imageFile;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+    private bool _editorInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _categories = (await BlogCategoryService.GetAllAsync()).ToList();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_editorInitialized)
+        {
+            _editorInitialized = true;
+            try
+            {
+                await JS.InvokeVoidAsync("eval", @"
+                    setTimeout(function () {
+                        if (typeof $ !== 'undefined' && typeof $.fn.cleditor !== 'undefined') {
+                            $('#blog-introduction').cleditor({ width: '100%', height: 200 });
+                            $('#blog-full-content').cleditor({ width: '100%', height: 400 });
+                        }
+                    }, 0);
+                ");
+            }
+            catch { /* ignore prerender */ }
+        }
+    }
+
+    private void OnTitleInput(ChangeEventArgs e)
+    {
+        _title = e.Value?.ToString() ?? string.Empty;
+        _slug = CapheVanPhong.Application.Helpers.SlugHelper.Generate(_title);
+    }
+
+    private void OnImageSelected(InputFileChangeEventArgs e)
+    {
+        _imageFile = e.File;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            _introduction = await JS.InvokeAsync<string>("cleditorHelper.getValue", "blog-introduction");
+        }
+        catch { /* ignore */ }
+
+        try
+        {
+            _fullContent = await JS.InvokeAsync<string>("cleditorHelper.getValue", "blog-full-content");
+        }
+        catch { /* ignore */ }
+
+        if (_categoryId <= 0)
+        {
+            _errorMessage = "Please select a blog category.";
+            _isSubmitting = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _errorMessage = "Title is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_introduction))
+        {
+            _errorMessage = "Introduction is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_fullContent))
+        {
+            _errorMessage = "Full content is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        Stream? imageStream = null;
+        string? imageFileName = null;
+        if (_imageFile is not null)
+        {
+            imageStream = _imageFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            imageFileName = _imageFile.Name;
+        }
+
+        try
+        {
+            var (success, error) = await BlogService.CreateAsync(
+                categoryId: _categoryId,
+                title: _title.Trim(),
+                introduction: _introduction,
+                fullContent: _fullContent,
+                isActive: _isActive,
+                imageStream: imageStream,
+                imageFileName: imageFileName);
+
+            if (success)
+                NavigationManager.NavigateTo("/admin/blogs?created=1", forceLoad: true);
+            else
+            {
+                _errorMessage = error;
+                _isSubmitting = false;
+            }
+        }
+        finally
+        {
+            if (imageStream is not null)
+                await imageStream.DisposeAsync();
+        }
+    }
+}

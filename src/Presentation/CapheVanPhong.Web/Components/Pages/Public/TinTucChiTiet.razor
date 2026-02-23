@@ -1,0 +1,109 @@
+@page "/tin-tuc/{CategorySlug}/{BlogSlug}"
+@layout Layout
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+
+@inject IBlogService BlogService
+
+<PageTitle>@(_blog?.Title ?? "Bài Viết") - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header -->
+<div class="container-fluid page-header mb-5 p-0"
+     style="background: linear-gradient(rgba(45,45,45,.7),rgba(45,45,45,.7)), url('/public/img/carousel-1.jpg') center center; background-size: cover;">
+    <div class="container-fluid page-header-inner py-5">
+        <div class="container text-center">
+            <h1 class="display-3 text-white mb-3 animated slideInDown">
+                @(_blog?.Title ?? "Bài Viết")
+            </h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-center text-uppercase">
+                    <li class="breadcrumb-item"><a href="/" class="text-white">Trang Chủ</a></li>
+                    <li class="breadcrumb-item">
+                        <a href="/tin-tuc/@CategorySlug" class="text-white">@(_blog?.Category?.Name ?? "Tin Tức")</a>
+                    </li>
+                    <li class="breadcrumb-item text-white active" aria-current="page">Bài Viết</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Blog Detail -->
+<div class="container-fluid py-5">
+    <div class="container">
+
+        @if (_isLoading)
+        {
+            <div class="text-center py-5">
+                <p class="text-muted">Đang tải...</p>
+            </div>
+        }
+        else if (_notFound || _blog is null)
+        {
+            <div class="text-center py-5">
+                <i class="fa fa-exclamation-circle fa-3x text-muted mb-3 d-block"></i>
+                <p class="text-muted">Không tìm thấy bài viết này.</p>
+                <a href="/tin-tuc/@CategorySlug" class="btn btn-primary mt-2">Quay Lại Danh Sách</a>
+            </div>
+        }
+        else
+        {
+            <div class="row justify-content-center">
+                <div class="col-lg-9">
+
+                    <!-- Meta -->
+                    <div class="d-flex align-items-center mb-4 text-muted small flex-wrap" style="gap:1rem;">
+                        <span><i class="fa fa-clock-o mr-1"></i> @_blog.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                        <span><i class="fa fa-folder-o mr-1"></i> @_blog.Category?.Name</span>
+                    </div>
+
+                    <!-- Featured Image -->
+                    @if (!string.IsNullOrEmpty(_blog.ImageName))
+                    {
+                        <div class="mb-4">
+                            <img src="/public/img/blogs/@_blog.ImageName" alt="@_blog.Title"
+                                 class="img-fluid rounded shadow-sm w-100"
+                                 style="max-height:450px; object-fit:cover;" />
+                        </div>
+                    }
+
+                    <!-- Full Content -->
+                    <div class="blog-full-content" style="line-height:1.9; font-size:1.05rem;">
+                        @((MarkupString)_blog.FullContent)
+                    </div>
+
+                    <!-- Back link -->
+                    <div class="mt-5 pt-4" style="border-top:1px solid #eee;">
+                        <a href="/tin-tuc/@CategorySlug" class="btn btn-outline-primary">
+                            <i class="fa fa-arrow-left mr-1"></i> Quay Lại Danh Sách
+                        </a>
+                    </div>
+
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public string CategorySlug { get; set; } = string.Empty;
+    [Parameter] public string BlogSlug { get; set; } = string.Empty;
+
+    private CapheVanPhong.Domain.Entities.Blog? _blog;
+    private bool _isLoading = true;
+    private bool _notFound;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _blog = await BlogService.GetBySlugAsync(BlogSlug);
+
+        if (_blog is null || !_blog.IsActive
+            || !(_blog.Category?.Slug.Equals(CategorySlug, StringComparison.OrdinalIgnoreCase) ?? false))
+        {
+            _notFound = true;
+        }
+
+        _isLoading = false;
+    }
+}

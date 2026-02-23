@@ -1,0 +1,18 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Core/">
+    <Project Path="src/Core/CapheVanPhong.Application/CapheVanPhong.Application.csproj" />
+    <Project Path="src/Core/CapheVanPhong.Domain/CapheVanPhong.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="src/Infrastructure/CapheVanPhong.Infrastructure/CapheVanPhong.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Presentation/">
+    <Project Path="src/Presentation/CapheVanPhong.Web/CapheVanPhong.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CapheVanPhong.Application.Tests/CapheVanPhong.Application.Tests.csproj" />
+    <Project Path="tests/CapheVanPhong.Domain.Tests/CapheVanPhong.Domain.Tests.csproj" />
+    <Project Path="tests/CapheVanPhong.Infrastructure.Tests/CapheVanPhong.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>

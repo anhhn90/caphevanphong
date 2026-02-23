@@ -1,0 +1,126 @@
+@inject NavigationManager NavigationManager
+
+<div class="sidebar">
+    <div class="sidebar-dropdown"><a href="#">Navigation</a></div>
+
+    <ul id="nav">
+        <!-- Dashboard -->
+        <li class="@GetOpenClass("/admin", exact: true)">
+            <a href="/admin"><i class="fa fa-home"></i> Dashboard</a>
+        </li>
+
+        <!-- Orders -->
+        <li class="has_sub @GetSubClass("/admin/orders")">
+            <a href="javascript:void(0)">
+                <i class="fa fa-shopping-cart"></i> Orders
+                <span class="pull-right"><i class="fa fa-chevron-right"></i></span>
+            </a>
+            <ul>
+                <li class="@GetItemClass("/admin/orders", exact: true)">
+                    <a href="/admin/orders">All Orders</a>
+                </li>
+                <li class="@GetItemClass("/admin/orders/pending", exact: true)">
+                    <a href="/admin/orders/pending">Pending</a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Catalog -->
+        <li class="has_sub @GetSubClass("/admin/products", "/admin/categories", "/admin/brands")">
+            <a href="javascript:void(0)">
+                <i class="fa fa-list-alt"></i> Catalog
+                <span class="pull-right"><i class="fa fa-chevron-right"></i></span>
+            </a>
+            <ul>
+                <li class="@GetItemClass("/admin/products", exact: false)">
+                    <a href="/admin/products"><i class="fa fa-tag"></i> Products</a>
+                </li>
+                <li class="@GetItemClass("/admin/categories", exact: false)">
+                    <a href="/admin/categories"><i class="fa fa-sitemap"></i> Categories</a>
+                </li>
+                <li class="@GetItemClass("/admin/brands", exact: false)">
+                    <a href="/admin/brands"><i class="fa fa-certificate"></i> Brands</a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Hot News -->
+        <li class="@GetOpenClass("/admin/hot-news", exact: false)">
+            <a href="/admin/hot-news">
+                <i class="fa fa-newspaper-o"></i> Hot News
+            </a>
+        </li>
+
+        <!-- Blog -->
+        <li class="has_sub @GetSubClass("/admin/blog-categories", "/admin/blogs")">
+            <a href="javascript:void(0)">
+                <i class="fa fa-pencil-square-o"></i> Blog
+                <span class="pull-right"><i class="fa fa-chevron-right"></i></span>
+            </a>
+            <ul>
+                <li class="@GetItemClass("/admin/blog-categories", exact: false)">
+                    <a href="/admin/blog-categories"><i class="fa fa-folder"></i> Blog Categories (Danh Mục Blog)</a>
+                </li>
+                <li class="@GetItemClass("/admin/blogs", exact: false)">
+                    <a href="/admin/blogs"><i class="fa fa-file-text-o"></i> Blogs (Bài Viết)</a>
+                </li>
+            </ul>
+        </li>
+
+        <!-- Customers -->
+        <li class="@GetOpenClass("/admin/customers", exact: false)">
+            <a href="/admin/customers">
+                <i class="fa fa-building"></i> Customers
+            </a>
+        </li>
+
+        <!-- Users -->
+        <li class="@GetOpenClass("/admin/users", exact: false)">
+            <a href="/admin/users">
+                <i class="fa fa-users"></i> Users
+            </a>
+        </li>
+    </ul>
+</div>
+
+@code {
+    private string GetRelativePath()
+    {
+        var baseUri = NavigationManager.BaseUri.TrimEnd('/');
+        var fullUri = NavigationManager.Uri.Split('?')[0].TrimEnd('/');
+        return fullUri.Length >= baseUri.Length
+            ? fullUri[baseUri.Length..]
+            : string.Empty;
+    }
+
+    // For top-level items with NO sub-menu: returns "open" (triggers CSS blue highlight)
+    private string GetOpenClass(string href, bool exact)
+    {
+        var path = GetRelativePath();
+        var hrefTrimmed = href.TrimEnd('/');
+        bool active = exact
+            ? path.Equals(hrefTrimmed, StringComparison.OrdinalIgnoreCase)
+            : path.StartsWith(hrefTrimmed, StringComparison.OrdinalIgnoreCase);
+        return active ? "open" : "";
+    }
+
+    // For nested sub-menu items: returns "current" (triggers CSS nested highlight)
+    private string GetItemClass(string href, bool exact)
+    {
+        var path = GetRelativePath();
+        var hrefTrimmed = href.TrimEnd('/');
+        bool active = exact
+            ? path.Equals(hrefTrimmed, StringComparison.OrdinalIgnoreCase)
+            : path.StartsWith(hrefTrimmed, StringComparison.OrdinalIgnoreCase);
+        return active ? "current" : "";
+    }
+
+    // For top-level has_sub items: returns "open" when on any matching prefix
+    private string GetSubClass(params string[] prefixes)
+    {
+        var path = GetRelativePath();
+        bool active = prefixes.Any(p =>
+            path.StartsWith(p.TrimEnd('/'), StringComparison.OrdinalIgnoreCase));
+        return active ? "open" : "";
+    }
+}

@@ -1,0 +1,137 @@
+@page "/tin-tuc/{CategorySlug}"
+@layout Layout
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Domain.Entities
+@using CapheVanPhong.Web.Components.Layout
+
+@inject IBlogCategoryService BlogCategoryService
+@inject IBlogService BlogService
+
+<PageTitle>@(_category?.Name ?? "Tin Tức") - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header -->
+<div class="container-fluid page-header mb-5 p-0"
+     style="background: linear-gradient(rgba(45,45,45,.7),rgba(45,45,45,.7)), url('/public/img/carousel-1.jpg') center center; background-size: cover;">
+    <div class="container-fluid page-header-inner py-5">
+        <div class="container text-center">
+            <h1 class="display-3 text-white mb-3 animated slideInDown">@(_category?.Name ?? "Tin Tức")</h1>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb justify-content-center text-uppercase">
+                    <li class="breadcrumb-item"><a href="/" class="text-white">Trang Chủ</a></li>
+                    <li class="breadcrumb-item text-white">Tin Tức</li>
+                    <li class="breadcrumb-item text-white active" aria-current="page">@(_category?.Name ?? CategorySlug)</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Blog List -->
+<div class="container-fluid py-5">
+    <div class="container">
+
+        @if (_isLoading)
+        {
+            <div class="text-center py-5">
+                <p class="text-muted">Đang tải...</p>
+            </div>
+        }
+        else if (_notFound)
+        {
+            <div class="text-center py-5">
+                <i class="fa fa-folder-open-o fa-3x text-muted mb-3 d-block"></i>
+                <p class="text-muted">Không tìm thấy danh mục này.</p>
+                <a href="/" class="btn btn-primary mt-2">Về Trang Chủ</a>
+            </div>
+        }
+        else if (_blogs.Count == 0)
+        {
+            <div class="text-center py-5">
+                <i class="fa fa-file-text-o fa-3x text-muted mb-3 d-block"></i>
+                <p class="text-muted">Danh mục này chưa có bài viết nào.</p>
+            </div>
+        }
+        else
+        {
+            <div class="section-title text-center mb-5">
+                <h4 class="text-primary text-uppercase" style="letter-spacing:5px;">@_category!.Name</h4>
+                <h1 class="display-4">Bài Viết Mới Nhất</h1>
+            </div>
+
+            @foreach (var blog in _blogs)
+            {
+                <div class="row mb-5 align-items-center blog-row"
+                     style="border-bottom:1px solid #eee; padding-bottom:2rem;">
+                    <!-- Image -->
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        @if (!string.IsNullOrEmpty(blog.ImageName))
+                        {
+                            <a href="/tin-tuc/@CategorySlug/@blog.Slug">
+                                <img src="/public/img/blogs/@blog.ImageName" alt="@blog.Title"
+                                     class="img-fluid rounded shadow-sm"
+                                     style="width:100%; height:220px; object-fit:cover;" />
+                            </a>
+                        }
+                        else
+                        {
+                            <a href="/tin-tuc/@CategorySlug/@blog.Slug"
+                               class="d-flex align-items-center justify-content-center bg-light rounded"
+                               style="height:220px; text-decoration:none;">
+                                <i class="fa fa-file-text-o fa-4x text-muted"></i>
+                            </a>
+                        }
+                    </div>
+
+                    <!-- Content -->
+                    <div class="col-md-8">
+                        <p class="text-muted small mb-2">
+                            <i class="fa fa-clock-o mr-1"></i>
+                            @blog.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                            <span class="mx-2">|</span>
+                            <i class="fa fa-folder-o mr-1"></i>
+                            @_category!.Name
+                        </p>
+                        <h4 class="mb-3">
+                            <a href="/tin-tuc/@CategorySlug/@blog.Slug"
+                               style="color:inherit; text-decoration:none;">@blog.Title</a>
+                        </h4>
+                        <div class="text-muted mb-3" style="line-height:1.7;">
+                            @((MarkupString)blog.Introduction)
+                        </div>
+                        <a href="/tin-tuc/@CategorySlug/@blog.Slug" class="btn btn-primary btn-sm">
+                            <i class="fa fa-arrow-right mr-1"></i> Xem thêm
+                        </a>
+                    </div>
+                </div>
+            }
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public string CategorySlug { get; set; } = string.Empty;
+
+    private CapheVanPhong.Domain.Entities.BlogCategory? _category;
+    private List<CapheVanPhong.Domain.Entities.Blog> _blogs = [];
+    private bool _isLoading = true;
+    private bool _notFound;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load category by slug from all active categories
+        IReadOnlyCollection<BlogCategory>? allCategories = await BlogCategoryService.GetActiveAsync();
+        _category = allCategories.FirstOrDefault(c =>
+            c.Slug.Equals(CategorySlug, StringComparison.OrdinalIgnoreCase));
+
+        if (_category is null)
+        {
+            _notFound = true;
+            _isLoading = false;
+            return;
+        }
+
+        _blogs = (await BlogService.GetByCategoryAsync(_category.Id, activeOnly: true)).ToList();
+        _isLoading = false;
+    }
+}

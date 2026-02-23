@@ -1,0 +1,66 @@
+@page "/thuc-don"
+@layout Layout
+@using CapheVanPhong.Web.Components.Layout
+@inherits MenuBase
+
+<PageTitle>Thực Đơn - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 position-relative overlay-bottom">
+    <div class="d-flex flex-column align-items-center justify-content-center pt-0 pt-lg-5" style="min-height: 400px">
+        <h1 class="display-4 mb-3 mt-0 mt-lg-5 text-white text-uppercase">Thực Đơn</h1>
+        <div class="d-inline-flex mb-lg-5">
+            <p class="m-0 text-white"><a class="text-white" href="/">Trang Chủ</a></p>
+            <p class="m-0 text-white px-2">/</p>
+            <p class="m-0 text-white">Thực Đơn</p>
+        </div>
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- Menu Start -->
+<div class="container-fluid pt-5">
+    <div class="container">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Thực Đơn & Giá Cả</h4>
+            <h1 class="display-4">Giá Cả Cạnh Tranh</h1>
+        </div>
+
+        @foreach (var category in MenuCategories)
+        {
+            <div class="row mb-5">
+                <div class="col-12">
+                    <h1 class="mb-5">@category.Name</h1>
+                </div>
+                @foreach (var item in category.Items)
+                {
+                    <div class="col-lg-6 mb-4">
+                        <div class="row align-items-center">
+                            <div class="col-4 col-sm-3">
+                                <img class="w-100 rounded-circle mb-3 mb-sm-0" src="@item.ImageUrl" alt="@item.Name">
+                                <h5 class="menu-price">@item.Price.ToString("N0")đ</h5>
+                            </div>
+                            <div class="col-8 col-sm-9">
+                                <h4>@item.Name</h4>
+                                <p class="m-0">@item.Description</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <hr class="mb-5">
+        }
+    </div>
+</div>
+<!-- Menu End -->
+
+<!-- Offer Banner Start -->
+<div class="offer container-fluid my-5 py-5 text-center position-relative overlay-top overlay-bottom">
+    <div class="container py-5">
+        <h1 class="display-3 text-primary mt-3">GIẢM 30%</h1>
+        <h1 class="text-white mb-3">Khi Đặt Bàn Trực Tuyến</h1>
+        <h4 class="text-white font-weight-normal mb-4 pb-3">Áp dụng cho tất cả các món trong thực đơn khi đặt bàn qua website</h4>
+        <a href="/dat-ban" class="btn btn-primary font-weight-bold py-3 px-5">Đặt Bàn Ngay</a>
+    </div>
+</div>
+<!-- Offer Banner End -->

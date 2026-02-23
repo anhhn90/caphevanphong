@@ -1,0 +1,97 @@
+@page "/danh-gia"
+@layout Layout
+@using CapheVanPhong.Web.Components.Layout
+@inherits TestimonialBase
+
+<PageTitle>Đánh Giá - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 position-relative overlay-bottom">
+    <div class="d-flex flex-column align-items-center justify-content-center pt-0 pt-lg-5" style="min-height: 400px">
+        <h1 class="display-4 mb-3 mt-0 mt-lg-5 text-white text-uppercase">Đánh Giá</h1>
+        <div class="d-inline-flex mb-lg-5">
+            <p class="m-0 text-white"><a class="text-white" href="/">Trang Chủ</a></p>
+            <p class="m-0 text-white px-2">/</p>
+            <p class="m-0 text-white">Đánh Giá</p>
+        </div>
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- Testimonial Start -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Đánh Giá</h4>
+            <h1 class="display-4">Khách Hàng Nói Gì</h1>
+        </div>
+        <div class="owl-carousel testimonial-carousel">
+            @foreach (var testimonial in Testimonials)
+            {
+                <div class="testimonial-item">
+                    <div class="d-flex align-items-center mb-3">
+                        <img class="img-fluid" src="@testimonial.ImageUrl" alt="@testimonial.Name">
+                        <div class="ml-3">
+                            <h4>@testimonial.Name</h4>
+                            <i>@testimonial.Profession</i>
+                        </div>
+                    </div>
+                    <p class="m-0">@testimonial.Content</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- Testimonial End -->
+
+<!-- Stats Section Start -->
+<div class="container-fluid py-5 bg-light">
+    <div class="container">
+        <div class="row text-center">
+            @foreach (var stat in Stats)
+            {
+                <div class="col-md-3 col-sm-6 mb-4">
+                    <div class="p-4">
+                        <h1 class="display-4 text-primary font-weight-bold">@stat.Value</h1>
+                        <h5 class="text-uppercase">@stat.Label</h5>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- Stats Section End -->
+
+<!-- All Reviews Start -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="section-title">
+            <h4 class="text-primary text-uppercase" style="letter-spacing: 5px;">Tất Cả Đánh Giá</h4>
+            <h1 class="display-4">Mọi Người Nói Về Chúng Tôi</h1>
+        </div>
+        <div class="row">
+            @foreach (var testimonial in Testimonials)
+            {
+                <div class="col-lg-6 mb-4">
+                    <div class="p-4 border rounded">
+                        <div class="d-flex align-items-center mb-3">
+                            <img class="img-fluid rounded-circle" src="@testimonial.ImageUrl" alt="@testimonial.Name" style="width: 60px; height: 60px; object-fit: cover;">
+                            <div class="ml-3">
+                                <h5 class="mb-0">@testimonial.Name</h5>
+                                <small class="text-muted">@testimonial.Profession</small>
+                                <div class="text-warning">
+                                    @for (int i = 0; i < testimonial.Rating; i++)
+                                    {
+                                        <i class="fa fa-star"></i>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <p class="m-0 text-muted">@testimonial.Content</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+<!-- All Reviews End -->

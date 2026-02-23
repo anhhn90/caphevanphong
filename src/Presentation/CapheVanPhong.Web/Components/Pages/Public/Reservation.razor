@@ -1,0 +1,133 @@
+@page "/dat-ban"
+@layout Layout
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Components.Forms
+@inherits ReservationBase
+
+<PageTitle>Đặt Bàn - Cà Phê Văn Phòng</PageTitle>
+
+<!-- Page Header Start -->
+<div class="container-fluid page-header mb-5 position-relative overlay-bottom">
+    <div class="d-flex flex-column align-items-center justify-content-center pt-0 pt-lg-5" style="min-height: 400px">
+        <h1 class="display-4 mb-3 mt-0 mt-lg-5 text-white text-uppercase">Đặt Bàn</h1>
+        <div class="d-inline-flex mb-lg-5">
+            <p class="m-0 text-white"><a class="text-white" href="/">Trang Chủ</a></p>
+            <p class="m-0 text-white px-2">/</p>
+            <p class="m-0 text-white">Đặt Bàn</p>
+        </div>
+    </div>
+</div>
+<!-- Page Header End -->
+
+<!-- Reservation Start -->
+<div class="container-fluid py-5">
+    <div class="container">
+        <div class="reservation position-relative overlay-top overlay-bottom">
+            <div class="row align-items-center">
+                <div class="col-lg-6 my-5 my-lg-0">
+                    <div class="p-5">
+                        <div class="mb-4">
+                            <h1 class="display-3 text-primary">GIẢM 30%</h1>
+                            <h1 class="text-white">Khi Đặt Bàn Trực Tuyến</h1>
+                        </div>
+                        <p class="text-white">Đặt bàn trực tuyến ngay hôm nay để nhận ưu đãi đặc biệt 30%. Chúng tôi luôn đảm bảo bạn sẽ có một trải nghiệm tuyệt vời tại Cà Phê Văn Phòng.</p>
+                        <ul class="list-inline text-white m-0">
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Giảm 30% tổng hóa đơn cho lần đặt đầu tiên</li>
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Ưu tiên chỗ ngồi đẹp, view tốt</li>
+                            <li class="py-2"><i class="fa fa-check text-primary mr-3"></i>Phục vụ tận tình ngay khi đến</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="text-center p-5" style="background: rgba(51, 33, 29, .8);">
+                        <h1 class="text-white mb-4 mt-5">Đặt Bàn Của Bạn</h1>
+
+                        @if (IsSubmitted)
+                        {
+                            <div class="alert alert-success">
+                                <i class="fa fa-check-circle mr-2"></i>
+                                Đặt bàn thành công! Chúng tôi sẽ liên hệ xác nhận với bạn trong vòng 30 phút.
+                            </div>
+                        }
+                        else
+                        {
+                            <EditForm Model="ReservationModel" OnValidSubmit="HandleReservationSubmit" class="mb-5">
+                                <DataAnnotationsValidator />
+
+                                <div class="form-group">
+                                    <InputText @bind-Value="ReservationModel.FullName"
+                                               class="form-control bg-transparent border-primary p-4"
+                                               placeholder="Họ và tên" />
+                                    <ValidationMessage For="() => ReservationModel.FullName" class="text-warning small" />
+                                </div>
+                                <div class="form-group">
+                                    <InputText @bind-Value="ReservationModel.Email"
+                                               class="form-control bg-transparent border-primary p-4"
+                                               placeholder="Địa chỉ email" />
+                                    <ValidationMessage For="() => ReservationModel.Email" class="text-warning small" />
+                                </div>
+                                <div class="form-group">
+                                    <InputText @bind-Value="ReservationModel.Phone"
+                                               class="form-control bg-transparent border-primary p-4"
+                                               placeholder="Số điện thoại" />
+                                    <ValidationMessage For="() => ReservationModel.Phone" class="text-warning small" />
+                                </div>
+                                <div class="form-group">
+                                    <InputDate @bind-Value="ReservationModel.ReservationDate"
+                                               class="form-control bg-transparent border-primary p-4" />
+                                    <ValidationMessage For="() => ReservationModel.ReservationDate" class="text-warning small" />
+                                </div>
+                                <div class="form-group">
+                                    <InputText @bind-Value="ReservationModel.ReservationTime"
+                                               class="form-control bg-transparent border-primary p-4"
+                                               placeholder="Giờ đặt (VD: 14:30)" />
+                                    <ValidationMessage For="() => ReservationModel.ReservationTime" class="text-warning small" />
+                                </div>
+                                <div class="form-group">
+                                    <InputSelect @bind-Value="ReservationModel.NumberOfGuests"
+                                                 class="custom-select bg-transparent border-primary px-4"
+                                                 style="height: 49px;">
+                                        <option value="0">-- Số khách --</option>
+                                        @for (int i = 1; i <= 10; i++)
+                                        {
+                                            <option value="@i">@i người</option>
+                                        }
+                                    </InputSelect>
+                                    <ValidationMessage For="() => ReservationModel.NumberOfGuests" class="text-warning small" />
+                                </div>
+                                <div class="form-group">
+                                    <InputTextArea @bind-Value="ReservationModel.SpecialRequests"
+                                                   class="form-control bg-transparent border-primary p-4"
+                                                   placeholder="Yêu cầu đặc biệt (tùy chọn)"
+                                                   rows="3" />
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(ErrorMessage))
+                                {
+                                    <div class="alert alert-danger mb-3">@ErrorMessage</div>
+                                }
+
+                                <div>
+                                    <button class="btn btn-primary btn-block font-weight-bold py-3"
+                                            type="submit"
+                                            disabled="@IsSubmitting">
+                                        @if (IsSubmitting)
+                                        {
+                                            <span class="spinner-border spinner-border-sm mr-2" role="status"></span>
+                                            <span>Đang xử lý...</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Đặt Bàn Ngay</span>
+                                        }
+                                    </button>
+                                </div>
+                            </EditForm>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Reservation End -->

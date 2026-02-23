@@ -1,0 +1,187 @@
+@page "/admin/hot-news/create"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject IHotNewsService HotNewsService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Create Hot News - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-plus"></i> Create Hot News</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/hot-news">Hot News</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Create</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+
+        @if (!string.IsNullOrEmpty(_errorMessage))
+        {
+            <div class="alert alert-danger alert-dismissable">
+                <button type="button" class="close" data-dismiss="alert">&times;</button>
+                <i class="fa fa-exclamation-circle"></i> @_errorMessage
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-md-10">
+                <div class="widget">
+                    <div class="widget-head">
+                        <div class="pull-left">Hot News Information</div>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="widget-content">
+                        <div class="padd">
+                            <form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault>
+
+                                <div class="form-group">
+                                    <label>Title <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" @bind="_title" maxlength="300" />
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Content <span class="text-danger">*</span></label>
+                                    <textarea id="hot-news-content" class="form-control" rows="8">@_content</textarea>
+                                    <p class="help-block">Use the toolbar above to format the content.</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Image <span class="text-muted">(optional)</span></label>
+                                    <InputFile OnChange="OnImageSelected" accept="image/*" class="form-control" />
+                                    <p class="help-block">Displayed at the top of the popup. Max 5 MB.</p>
+                                </div>
+
+                                <div class="form-group">
+                                    <div class="checkbox">
+                                        <label><input type="checkbox" @bind="_isActive" /> Active (show in popup)</label>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <a href="/admin/hot-news" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+                                    <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                        @if (_isSubmitting)
+                                        {
+                                            <i class="fa fa-spinner fa-spin"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa fa-save"></i>
+                                        }
+                                        Save
+                                    </button>
+                                </div>
+
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    private string _title = string.Empty;
+    private string _content = string.Empty;
+    private bool _isActive = true;
+    private IBrowserFile? _imageFile;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Defer past Blazor's DOM reconciliation tick before attaching CLEditor.
+            try
+            {
+                await JS.InvokeVoidAsync("eval", @"
+                    setTimeout(function () {
+                        if (typeof $ !== 'undefined' && typeof $.fn.cleditor !== 'undefined') {
+                            $('#hot-news-content').cleditor({ width: '100%', height: 350 });
+                        }
+                    }, 0);
+                ");
+            }
+            catch { /* ignore prerender */ }
+        }
+    }
+
+    private void OnImageSelected(InputFileChangeEventArgs e)
+    {
+        _imageFile = e.File;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            _content = await JS.InvokeAsync<string>("cleditorHelper.getValue", "hot-news-content");
+        }
+        catch { /* ignore */ }
+
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _errorMessage = "Title is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_content))
+        {
+            _errorMessage = "Content is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        Stream? imageStream = null;
+        string? originalFileName = null;
+
+        if (_imageFile is not null)
+        {
+            imageStream = _imageFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            originalFileName = _imageFile.Name;
+        }
+
+        try
+        {
+            var (success, error) = await HotNewsService.CreateAsync(
+                title: _title.Trim(),
+                content: _content,
+                isActive: _isActive,
+                imageStream: imageStream,
+                originalFileName: originalFileName);
+
+            if (success)
+                NavigationManager.NavigateTo("/admin/hot-news?created=1", forceLoad: true);
+            else
+            {
+                _errorMessage = error;
+                _isSubmitting = false;
+            }
+        }
+        finally
+        {
+            if (imageStream is not null)
+                await imageStream.DisposeAsync();
+        }
+    }
+}

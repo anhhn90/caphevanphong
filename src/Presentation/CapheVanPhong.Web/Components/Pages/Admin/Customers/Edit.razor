@@ -1,0 +1,766 @@
+@page "/admin/customers/edit/{Id:int}"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Identity
+
+@inject ICustomerService CustomerService
+@inject UserManager<IdentityUser> UserManager
+@inject NavigationManager NavigationManager
+
+<PageTitle>Edit Customer - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-pencil"></i> Edit Customer (Chỉnh sửa khách hàng)</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/customers">Customers</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Edit</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+
+        @if (_notFound)
+        {
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i> Customer not found.
+                <a href="/admin/customers">Back to list</a>
+            </div>
+        }
+        else if (_isLoading)
+        {
+            <p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</p>
+        }
+        else
+        {
+            @* ── Customer Details ── *@
+            @if (!string.IsNullOrEmpty(_successMessage))
+            {
+                <div class="alert alert-success alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fa fa-check-circle"></i> @_successMessage
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fa fa-exclamation-circle"></i> @_errorMessage
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left">Customer Information</div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+                                <form @onsubmit="HandleUpdateAsync" @onsubmit:preventDefault>
+
+                                    <div class="form-group">
+                                        <label>Company Name (Tên công ty) <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" @bind="_name" maxlength="200" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Description (Mô tả) <span class="text-muted">(optional)</span></label>
+                                        <textarea class="form-control" rows="3" @bind="_description" maxlength="1000"></textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Logo <span class="text-muted">(optional)</span></label>
+                                        @if (!string.IsNullOrEmpty(_existingLogoName))
+                                        {
+                                            <div class="mb-2">
+                                                <img src="/public/img/customers/@_existingLogoName" alt="Current logo"
+                                                     style="max-height:80px; max-width:200px; object-fit:contain; border:1px solid #ddd; padding:4px;" />
+                                                <br />
+                                                <label class="mt-1">
+                                                    <input type="checkbox" @bind="_removeLogo" /> Remove logo
+                                                </label>
+                                            </div>
+                                        }
+                                        @if (!_removeLogo)
+                                        {
+                                            <InputFile OnChange="OnLogoSelected" accept="image/*" class="form-control" />
+                                            <p class="help-block">Upload a new logo to replace the existing one. Max 5 MB.</p>
+                                        }
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Display Order (Thứ tự hiển thị)</label>
+                                        <input type="number" class="form-control" @bind="_displayOrder" min="0" style="width:120px;" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label>
+                                                <input type="checkbox" @bind="_isGoldCustomer" />
+                                                <i class="fa fa-star text-warning"></i> Gold Customer — show on home page (Khách hàng vàng)
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label><input type="checkbox" @bind="_isActive" /> Active (Hoạt động)</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <a href="/admin/customers" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+                                        <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                            @if (_isSubmitting) { <i class="fa fa-spinner fa-spin"></i> } else { <i class="fa fa-save"></i> }
+                                            Save Changes
+                                        </button>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* ── Representatives ── *@
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left"><i class="fa fa-users"></i> Representatives (Người đại diện)</div>
+                            <div class="pull-right">
+                                <button class="btn btn-primary btn-sm" @onclick="ToggleAddRepForm">
+                                    <i class="fa fa-plus"></i> Add Representative
+                                </button>
+                            </div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+
+                                @if (!string.IsNullOrEmpty(_repSuccessMessage))
+                                {
+                                    <div class="alert alert-success alert-dismissable">
+                                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                        <i class="fa fa-check-circle"></i> @_repSuccessMessage
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(_repErrorMessage))
+                                {
+                                    <div class="alert alert-danger alert-dismissable">
+                                        <button type="button" class="close" data-dismiss="alert">&times;</button>
+                                        <i class="fa fa-exclamation-circle"></i> @_repErrorMessage
+                                    </div>
+                                }
+
+                                @* Add Representative Form *@
+                                @if (_showAddRepForm)
+                                {
+                                    <div class="panel panel-default mb-3">
+                                        <div class="panel-heading"><strong>Add New Representative</strong></div>
+                                        <div class="panel-body">
+                                            <form @onsubmit="HandleAddRepAsync" @onsubmit:preventDefault>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>User <span class="text-danger">*</span></label>
+                                                            <select class="form-control" @bind="_repUserId">
+                                                                <option value="">-- Select user --</option>
+                                                                @foreach (var user in _availableUsers)
+                                                                {
+                                                                    <option value="@user.Id">@(user.UserName) (@user.Email)</option>
+                                                                }
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Title (Danh xưng) <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" @bind="_repTitle" maxlength="50" placeholder="e.g. Anh, Chị, Mr." />
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <div class="form-group">
+                                                            <label>Display Name (Tên hiển thị) <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" @bind="_repDisplayName" maxlength="200" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label>Position (Chức vụ) <span class="text-danger">*</span></label>
+                                                            <input type="text" class="form-control" @bind="_repPosition" maxlength="200" placeholder="e.g. CEO, IT Manager" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <div class="form-group">
+                                                            <label>Star Rating (Sao) <span class="text-danger">*</span></label>
+                                                            <input type="number" class="form-control" @bind="_repStarRating" min="1" max="5" />
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label>Avatar <span class="text-muted">(optional)</span></label>
+                                                            <InputFile OnChange="OnRepAvatarSelected" accept="image/*" class="form-control" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Comment / Testimonial (Nhận xét) <span class="text-muted">(optional)</span></label>
+                                                    <textarea class="form-control" rows="3" @bind="_repComment" maxlength="2000"></textarea>
+                                                </div>
+                                                <div class="form-group">
+                                                    <div class="checkbox">
+                                                        <label><input type="checkbox" @bind="_repIsShowOnHomepage" /> Show testimonial on home page (Hiển thị trên trang chủ)</label>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <button type="button" class="btn btn-default btn-sm" @onclick="CancelAddRep">Cancel</button>
+                                                    <button type="submit" class="btn btn-primary btn-sm" disabled="@_isRepSubmitting">
+                                                        @if (_isRepSubmitting) { <i class="fa fa-spinner fa-spin"></i> } else { <i class="fa fa-plus"></i> }
+                                                        Add Representative
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                }
+
+                                @* Representatives Table *@
+                                @if (_representatives.Count == 0)
+                                {
+                                    <p class="text-muted">No representatives yet. Add one using the button above.</p>
+                                }
+                                else
+                                {
+                                    @foreach (var rep in _representatives)
+                                    {
+                                        <div class="panel panel-default mb-2">
+                                            <div class="panel-body">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-1">
+                                                        @if (!string.IsNullOrEmpty(rep.AvatarName))
+                                                        {
+                                                            <img src="/public/img/representatives/@rep.AvatarName" alt="@rep.DisplayName"
+                                                                 class="img-circle" style="width:48px;height:48px;object-fit:cover;" />
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="text-center" style="width:48px;height:48px;line-height:48px;background:#eee;border-radius:50%;font-weight:bold;font-size:18px;">
+                                                                @(rep.DisplayName.Length > 0 ? rep.DisplayName[0].ToString().ToUpper() : "?")
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <strong>@rep.Title @rep.DisplayName</strong><br />
+                                                        <small class="text-muted">@rep.Position</small>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        @for (int s = 1; s <= 5; s++)
+                                                        {
+                                                            int star = s;
+                                                            <i class="fa @(star <= rep.StarRating ? "fa-star text-warning" : "fa-star-o text-muted")"></i>
+                                                        }
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        @if (rep.IsShowOnHomepage)
+                                                        {
+                                                            <span class="label label-success">On homepage</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="label label-default">Hidden</span>
+                                                        }
+                                                    </div>
+                                                    <div class="col-md-3 text-right">
+                                                        <button class="btn btn-xs btn-default" @onclick="() => StartEditRep(rep.Id)">
+                                                            <i class="fa fa-pencil"></i> Edit
+                                                        </button>
+                                                        <button class="btn btn-xs btn-danger" @onclick="() => ConfirmRemoveRep(rep.Id, rep.DisplayName)">
+                                                            <i class="fa fa-trash"></i> Remove
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                @* Inline edit form for this representative *@
+                                                @if (_editRepId == rep.Id)
+                                                {
+                                                    <hr />
+                                                    <form @onsubmit="HandleUpdateRepAsync" @onsubmit:preventDefault>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                    <label>User <span class="text-danger">*</span></label>
+                                                                    <select class="form-control" @bind="_editRepUserId">
+                                                                        <option value="">-- Select user --</option>
+                                                                        @foreach (var user in _availableUsers)
+                                                                        {
+                                                                            <option value="@user.Id">@(user.UserName) (@user.Email)</option>
+                                                                        }
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="form-group">
+                                                                    <label>Title <span class="text-danger">*</span></label>
+                                                                    <input type="text" class="form-control" @bind="_editRepTitle" maxlength="50" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-3">
+                                                                <div class="form-group">
+                                                                    <label>Display Name <span class="text-danger">*</span></label>
+                                                                    <input type="text" class="form-control" @bind="_editRepDisplayName" maxlength="200" />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row">
+                                                            <div class="col-md-4">
+                                                                <div class="form-group">
+                                                                    <label>Position <span class="text-danger">*</span></label>
+                                                                    <input type="text" class="form-control" @bind="_editRepPosition" maxlength="200" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-2">
+                                                                <div class="form-group">
+                                                                    <label>Star Rating <span class="text-danger">*</span></label>
+                                                                    <input type="number" class="form-control" @bind="_editRepStarRating" min="1" max="5" />
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                    <label>Avatar</label>
+                                                                    @if (!string.IsNullOrEmpty(_editRepExistingAvatar) && !_editRepRemoveAvatar)
+                                                                    {
+                                                                        <div class="mb-1">
+                                                                            <img src="/public/img/representatives/@_editRepExistingAvatar"
+                                                                                 style="height:40px;width:40px;object-fit:cover;border-radius:50%;" />
+                                                                            <label class="ml-2">
+                                                                                <input type="checkbox" @bind="_editRepRemoveAvatar" /> Remove
+                                                                            </label>
+                                                                        </div>
+                                                                    }
+                                                                    @if (!_editRepRemoveAvatar)
+                                                                    {
+                                                                        <InputFile OnChange="OnEditRepAvatarSelected" accept="image/*" class="form-control" />
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label>Comment / Testimonial (optional)</label>
+                                                            <textarea class="form-control" rows="3" @bind="_editRepComment" maxlength="2000"></textarea>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <div class="checkbox">
+                                                                <label><input type="checkbox" @bind="_editRepIsShowOnHomepage" /> Show testimonial on home page</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <button type="button" class="btn btn-default btn-sm" @onclick="CancelEditRep">Cancel</button>
+                                                            <button type="submit" class="btn btn-primary btn-sm" disabled="@_isRepSubmitting">
+                                                                @if (_isRepSubmitting) { <i class="fa fa-spinner fa-spin"></i> } else { <i class="fa fa-save"></i> }
+                                                                Save Changes
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@* Remove representative confirmation modal *@
+@if (_removeRepId.HasValue)
+{
+    <div class="modal fade in" style="display:block; background:rgba(0,0,0,.5);" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Confirm Remove</h4>
+                </div>
+                <div class="modal-body">
+                    <p>Remove "<strong>@_removeRepName</strong>" as a representative? This cannot be undone.</p>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" @onclick="CancelRemoveRep">Cancel</button>
+                    <button class="btn btn-danger" @onclick="ExecuteRemoveRepAsync" disabled="@_isRepSubmitting">
+                        @if (_isRepSubmitting) { <i class="fa fa-spinner fa-spin"></i> } else { <i class="fa fa-trash"></i> }
+                        Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    // Customer fields
+    private string _name = string.Empty;
+    private string _description = string.Empty;
+    private string? _existingLogoName;
+    private bool _removeLogo;
+    private IBrowserFile? _newLogoFile;
+    private bool _isGoldCustomer;
+    private bool _isActive = true;
+    private int _displayOrder;
+    private bool _isSubmitting;
+    private bool _isLoading = true;
+    private bool _notFound;
+    private string? _successMessage;
+    private string? _errorMessage;
+
+    // Representatives
+    private List<CapheVanPhong.Domain.Entities.CustomerRepresentative> _representatives = [];
+    private List<IdentityUser> _availableUsers = [];
+
+    // Add rep form
+    private bool _showAddRepForm;
+    private string _repUserId = string.Empty;
+    private string _repTitle = string.Empty;
+    private string _repDisplayName = string.Empty;
+    private string _repPosition = string.Empty;
+    private string _repComment = string.Empty;
+    private int _repStarRating = 5;
+    private bool _repIsShowOnHomepage;
+    private IBrowserFile? _repAvatarFile;
+
+    // Edit rep form
+    private int? _editRepId;
+    private string _editRepUserId = string.Empty;
+    private string _editRepTitle = string.Empty;
+    private string _editRepDisplayName = string.Empty;
+    private string _editRepPosition = string.Empty;
+    private string _editRepComment = string.Empty;
+    private int _editRepStarRating = 5;
+    private bool _editRepIsShowOnHomepage;
+    private string? _editRepExistingAvatar;
+    private bool _editRepRemoveAvatar;
+    private IBrowserFile? _editRepAvatarFile;
+
+    // Remove rep
+    private int? _removeRepId;
+    private string? _removeRepName;
+    private bool _isRepSubmitting;
+    private string? _repSuccessMessage;
+    private string? _repErrorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var customer = await CustomerService.GetByIdAsync(Id);
+        if (customer is null)
+        {
+            _notFound = true;
+            _isLoading = false;
+            return;
+        }
+
+        _name = customer.Name;
+        _description = customer.Description ?? string.Empty;
+        _existingLogoName = customer.LogoName;
+        _isGoldCustomer = customer.IsGoldCustomer;
+        _isActive = customer.IsActive;
+        _displayOrder = customer.DisplayOrder;
+        _representatives = customer.Representatives.ToList();
+
+        // Load all "User" role accounts for dropdown
+        _availableUsers = (await UserManager.GetUsersInRoleAsync("User")).OrderBy(u => u.UserName).ToList();
+
+        _isLoading = false;
+    }
+
+    private void OnLogoSelected(InputFileChangeEventArgs e) => _newLogoFile = e.File;
+
+    private async Task HandleUpdateAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+        _successMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _errorMessage = "Company name is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        Stream? logoStream = null;
+        string? logoFileName = null;
+        string? existingLogoName = _removeLogo ? null : _existingLogoName;
+
+        if (_newLogoFile is not null && !_removeLogo)
+        {
+            logoStream = _newLogoFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            logoFileName = _newLogoFile.Name;
+        }
+
+        try
+        {
+            var (success, error) = await CustomerService.UpdateAsync(
+                id: Id,
+                name: _name.Trim(),
+                description: string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+                isGoldCustomer: _isGoldCustomer,
+                isActive: _isActive,
+                displayOrder: _displayOrder,
+                existingLogoName: existingLogoName,
+                newLogoStream: logoStream,
+                newLogoFileName: logoFileName);
+
+            if (success)
+            {
+                _successMessage = "Customer updated successfully.";
+                // Refresh logo state
+                var updated = await CustomerService.GetByIdAsync(Id);
+                if (updated is not null) _existingLogoName = updated.LogoName;
+                _removeLogo = false;
+                _newLogoFile = null;
+            }
+            else
+                _errorMessage = error;
+        }
+        finally
+        {
+            if (logoStream is not null) await logoStream.DisposeAsync();
+            _isSubmitting = false;
+        }
+    }
+
+    // ── Add Representative ──
+    private void ToggleAddRepForm()
+    {
+        _showAddRepForm = !_showAddRepForm;
+        _repSuccessMessage = null;
+        _repErrorMessage = null;
+        ResetAddRepForm();
+    }
+
+    private void CancelAddRep()
+    {
+        _showAddRepForm = false;
+        ResetAddRepForm();
+    }
+
+    private void ResetAddRepForm()
+    {
+        _repUserId = string.Empty;
+        _repTitle = string.Empty;
+        _repDisplayName = string.Empty;
+        _repPosition = string.Empty;
+        _repComment = string.Empty;
+        _repStarRating = 5;
+        _repIsShowOnHomepage = false;
+        _repAvatarFile = null;
+    }
+
+    private void OnRepAvatarSelected(InputFileChangeEventArgs e) => _repAvatarFile = e.File;
+
+    private async Task HandleAddRepAsync()
+    {
+        _isRepSubmitting = true;
+        _repErrorMessage = null;
+        _repSuccessMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_repUserId))
+        {
+            _repErrorMessage = "Please select a user.";
+            _isRepSubmitting = false;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_repTitle) || string.IsNullOrWhiteSpace(_repDisplayName) || string.IsNullOrWhiteSpace(_repPosition))
+        {
+            _repErrorMessage = "Title, Display Name, and Position are required.";
+            _isRepSubmitting = false;
+            return;
+        }
+
+        Stream? avatarStream = null;
+        string? avatarFileName = null;
+        if (_repAvatarFile is not null)
+        {
+            avatarStream = _repAvatarFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            avatarFileName = _repAvatarFile.Name;
+        }
+
+        try
+        {
+            var (success, error) = await CustomerService.AddRepresentativeAsync(
+                customerId: Id,
+                userId: _repUserId,
+                title: _repTitle.Trim(),
+                displayName: _repDisplayName.Trim(),
+                position: _repPosition.Trim(),
+                comment: string.IsNullOrWhiteSpace(_repComment) ? null : _repComment.Trim(),
+                starRating: _repStarRating,
+                isShowOnHomepage: _repIsShowOnHomepage,
+                avatarStream: avatarStream,
+                avatarFileName: avatarFileName);
+
+            if (success)
+            {
+                _repSuccessMessage = "Representative added successfully.";
+                _showAddRepForm = false;
+                ResetAddRepForm();
+                await RefreshRepresentativesAsync();
+            }
+            else
+                _repErrorMessage = error;
+        }
+        finally
+        {
+            if (avatarStream is not null) await avatarStream.DisposeAsync();
+            _isRepSubmitting = false;
+        }
+    }
+
+    // ── Edit Representative ──
+    private void StartEditRep(int repId)
+    {
+        _editRepId = repId;
+        _repErrorMessage = null;
+        _repSuccessMessage = null;
+        var rep = _representatives.FirstOrDefault(r => r.Id == repId);
+        if (rep is null) return;
+        _editRepUserId = rep.UserId;
+        _editRepTitle = rep.Title;
+        _editRepDisplayName = rep.DisplayName;
+        _editRepPosition = rep.Position;
+        _editRepComment = rep.Comment ?? string.Empty;
+        _editRepStarRating = rep.StarRating;
+        _editRepIsShowOnHomepage = rep.IsShowOnHomepage;
+        _editRepExistingAvatar = rep.AvatarName;
+        _editRepRemoveAvatar = false;
+        _editRepAvatarFile = null;
+    }
+
+    private void CancelEditRep()
+    {
+        _editRepId = null;
+    }
+
+    private void OnEditRepAvatarSelected(InputFileChangeEventArgs e) => _editRepAvatarFile = e.File;
+
+    private async Task HandleUpdateRepAsync()
+    {
+        if (!_editRepId.HasValue) return;
+        _isRepSubmitting = true;
+        _repErrorMessage = null;
+        _repSuccessMessage = null;
+
+        if (string.IsNullOrWhiteSpace(_editRepUserId))
+        {
+            _repErrorMessage = "Please select a user.";
+            _isRepSubmitting = false;
+            return;
+        }
+        if (string.IsNullOrWhiteSpace(_editRepTitle) || string.IsNullOrWhiteSpace(_editRepDisplayName) || string.IsNullOrWhiteSpace(_editRepPosition))
+        {
+            _repErrorMessage = "Title, Display Name, and Position are required.";
+            _isRepSubmitting = false;
+            return;
+        }
+
+        Stream? avatarStream = null;
+        string? avatarFileName = null;
+        string? existingAvatar = _editRepRemoveAvatar ? null : _editRepExistingAvatar;
+
+        if (_editRepAvatarFile is not null && !_editRepRemoveAvatar)
+        {
+            avatarStream = _editRepAvatarFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            avatarFileName = _editRepAvatarFile.Name;
+        }
+
+        try
+        {
+            var (success, error) = await CustomerService.UpdateRepresentativeAsync(
+                representativeId: _editRepId.Value,
+                userId: _editRepUserId,
+                title: _editRepTitle.Trim(),
+                displayName: _editRepDisplayName.Trim(),
+                position: _editRepPosition.Trim(),
+                comment: string.IsNullOrWhiteSpace(_editRepComment) ? null : _editRepComment.Trim(),
+                starRating: _editRepStarRating,
+                isShowOnHomepage: _editRepIsShowOnHomepage,
+                existingAvatarName: existingAvatar,
+                newAvatarStream: avatarStream,
+                newAvatarFileName: avatarFileName);
+
+            if (success)
+            {
+                _repSuccessMessage = "Representative updated successfully.";
+                _editRepId = null;
+                await RefreshRepresentativesAsync();
+            }
+            else
+                _repErrorMessage = error;
+        }
+        finally
+        {
+            if (avatarStream is not null) await avatarStream.DisposeAsync();
+            _isRepSubmitting = false;
+        }
+    }
+
+    // ── Remove Representative ──
+    private void ConfirmRemoveRep(int repId, string name)
+    {
+        _removeRepId = repId;
+        _removeRepName = name;
+        _repErrorMessage = null;
+        _repSuccessMessage = null;
+    }
+
+    private void CancelRemoveRep()
+    {
+        _removeRepId = null;
+        _removeRepName = null;
+    }
+
+    private async Task ExecuteRemoveRepAsync()
+    {
+        if (!_removeRepId.HasValue) return;
+        _isRepSubmitting = true;
+        var (success, error) = await CustomerService.RemoveRepresentativeAsync(_removeRepId.Value);
+        if (success)
+        {
+            _repSuccessMessage = "Representative removed.";
+            _representatives.RemoveAll(r => r.Id == _removeRepId.Value);
+        }
+        else
+            _repErrorMessage = error;
+
+        _removeRepId = null;
+        _removeRepName = null;
+        _isRepSubmitting = false;
+    }
+
+    private async Task RefreshRepresentativesAsync()
+    {
+        var customer = await CustomerService.GetByIdAsync(Id);
+        if (customer is not null)
+            _representatives = customer.Representatives.ToList();
+    }
+}
