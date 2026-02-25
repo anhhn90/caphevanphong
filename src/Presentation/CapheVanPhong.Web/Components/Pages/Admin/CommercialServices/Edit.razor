@@ -1,0 +1,300 @@
+@page "/admin/commercial-services/edit/{Id:int}"
+@layout AdminLayout
+@rendermode InteractiveServer
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using CapheVanPhong.Application.Services
+@using CapheVanPhong.Web.Components.Layout
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+
+@inject ICommercialServiceService CommercialServiceService
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+<PageTitle>Edit Commercial Service - Caphe Van Phong Admin</PageTitle>
+
+<div class="page-head">
+    <h2 class="pull-left"><i class="fa fa-pencil"></i> Edit Commercial Service (Chỉnh Sửa Dịch Vụ)</h2>
+    <div class="bread-crumb pull-right">
+        <a href="/admin"><i class="fa fa-home"></i> Home</a>
+        <span class="divider">/</span>
+        <a href="/admin/commercial-services">Commercial Services</a>
+        <span class="divider">/</span>
+        <a href="#" class="bread-current">Edit</a>
+    </div>
+    <div class="clearfix"></div>
+</div>
+
+<div class="matter">
+    <div class="container">
+
+        @if (!_loaded)
+        {
+            <p class="text-muted"><i class="fa fa-spinner fa-spin"></i> Loading...</p>
+        }
+        else if (_notFound)
+        {
+            <div class="alert alert-warning">
+                <i class="fa fa-exclamation-triangle"></i> Commercial service not found.
+                <a href="/admin/commercial-services" class="btn btn-sm btn-default ml-2">Back to list</a>
+            </div>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <div class="alert alert-danger alert-dismissable">
+                    <button type="button" class="close" data-dismiss="alert">&times;</button>
+                    <i class="fa fa-exclamation-circle"></i> @_errorMessage
+                </div>
+            }
+
+            <div class="row">
+                <div class="col-md-10">
+                    <div class="widget">
+                        <div class="widget-head">
+                            <div class="pull-left">Service #@Id</div>
+                            <div class="clearfix"></div>
+                        </div>
+                        <div class="widget-content">
+                            <div class="padd">
+                                <form @onsubmit="HandleSubmitAsync" @onsubmit:preventDefault>
+
+                                    <div class="form-group">
+                                        <label>Title (Tiêu đề) <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" value="@_title"
+                                               @oninput="OnTitleInput" maxlength="200" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Slug <span class="text-muted">(auto-generated)</span></label>
+                                        <input type="text" class="form-control" @bind="_slug" maxlength="250" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Icon Class (Lớp biểu tượng) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" @bind="_iconClass" @bind:event="oninput"
+                                                   placeholder="e.g. fa fa-coffee" maxlength="100" />
+                                            <span class="input-group-addon" style="min-width:40px; text-align:center;">
+                                                <i class="@_iconClass"></i>
+                                            </span>
+                                        </div>
+                                        <p class="help-block">The icon class is from <a href="https://fontawesome.com/v4/icons/" target="_blank">FontAwesome</a> e.g. <code>fa fa-coffee</code></p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Introduction (Giới thiệu) <span class="text-danger">*</span></label>
+                                        <textarea id="svc-introduction" class="form-control" rows="5">@_introduction</textarea>
+                                        <p class="help-block">Short description shown on the services overview card.</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Content (Nội dung chi tiết) <span class="text-muted">(optional — leave empty for no detail page)</span></label>
+                                        <textarea id="svc-content" class="form-control" rows="12">@_content</textarea>
+                                        <p class="help-block">Full content shown on the detail page. If empty, no "Chi tiết..." link will appear.</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Image</label>
+                                        @if (!string.IsNullOrEmpty(_existingImageName))
+                                        {
+                                            <div class="mb-2">
+                                                <img src="/public/img/commercial-services/@_existingImageName" alt="Current image"
+                                                     style="max-height:120px; border-radius:4px; border:1px solid #ddd;" />
+                                                <div class="checkbox mt-1">
+                                                    <label>
+                                                        <input type="checkbox" @bind="_removeImage" /> Remove current image
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        }
+                                        <InputFile OnChange="OnImageSelected" accept="image/*" class="form-control" />
+                                        <p class="help-block">Upload a new image to replace the current one. Max 5 MB.</p>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Display Order (Thứ tự hiển thị)</label>
+                                        <input type="number" class="form-control" @bind="_displayOrder" style="max-width:150px;" />
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="checkbox">
+                                            <label><input type="checkbox" @bind="_isActive" /> Active (Hoạt động)</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <a href="/admin/commercial-services" class="btn btn-default"><i class="fa fa-arrow-left"></i> Back</a>
+                                        <button type="submit" class="btn btn-primary" disabled="@_isSubmitting">
+                                            @if (_isSubmitting)
+                                            {
+                                                <i class="fa fa-spinner fa-spin"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa fa-save"></i>
+                                            }
+                                            Save
+                                        </button>
+                                    </div>
+
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private string _title = string.Empty;
+    private string _slug = string.Empty;
+    private string _iconClass = string.Empty;
+    private string _introduction = string.Empty;
+    private string? _content;
+    private bool _isActive = true;
+    private int _displayOrder;
+    private string? _existingImageName;
+    private bool _removeImage;
+    private IBrowserFile? _imageFile;
+    private bool _isSubmitting;
+    private string? _errorMessage;
+    private bool _loaded;
+    private bool _notFound;
+    private bool _editorInitialized;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var service = await CommercialServiceService.GetByIdAsync(Id);
+        if (service is null)
+        {
+            _notFound = true;
+            _loaded = true;
+            return;
+        }
+
+        _title = service.Title;
+        _slug = service.Slug;
+        _iconClass = service.IconClass;
+        _introduction = service.Introduction;
+        _content = service.Content;
+        _isActive = service.IsActive;
+        _displayOrder = service.DisplayOrder;
+        _existingImageName = service.ImageName;
+        _loaded = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_notFound && !_editorInitialized)
+        {
+            _editorInitialized = true;
+            try
+            {
+                await JS.InvokeVoidAsync("eval", @"
+                    setTimeout(function () {
+                        if (typeof $ !== 'undefined' && typeof $.fn.cleditor !== 'undefined') {
+                            $('#svc-introduction').cleditor({ width: '100%', height: 200 });
+                            $('#svc-content').cleditor({ width: '100%', height: 400 });
+                        }
+                    }, 0);
+                ");
+            }
+            catch { /* ignore prerender */ }
+        }
+    }
+
+    private void OnTitleInput(ChangeEventArgs e)
+    {
+        _title = e.Value?.ToString() ?? string.Empty;
+        _slug = CapheVanPhong.Application.Helpers.SlugHelper.Generate(_title);
+    }
+
+    private void OnImageSelected(InputFileChangeEventArgs e)
+    {
+        _imageFile = e.File;
+    }
+
+    private async Task HandleSubmitAsync()
+    {
+        _isSubmitting = true;
+        _errorMessage = null;
+
+        try
+        {
+            _introduction = await JS.InvokeAsync<string>("cleditorHelper.getValue", "svc-introduction");
+        }
+        catch { /* ignore */ }
+
+        try
+        {
+            _content = await JS.InvokeAsync<string>("cleditorHelper.getValue", "svc-content");
+        }
+        catch { /* ignore */ }
+
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _errorMessage = "Title is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_iconClass))
+        {
+            _errorMessage = "Icon class is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_introduction))
+        {
+            _errorMessage = "Introduction is required.";
+            _isSubmitting = false;
+            return;
+        }
+
+        var existingImageName = _removeImage ? null : _existingImageName;
+
+        Stream? imageStream = null;
+        string? imageFileName = null;
+        if (_imageFile is not null)
+        {
+            imageStream = _imageFile.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024);
+            imageFileName = _imageFile.Name;
+        }
+
+        try
+        {
+            var (success, error) = await CommercialServiceService.UpdateAsync(
+                id: Id,
+                title: _title.Trim(),
+                introduction: _introduction,
+                content: _content,
+                iconClass: _iconClass.Trim(),
+                isActive: _isActive,
+                displayOrder: _displayOrder,
+                existingImageName: existingImageName,
+                newImageStream: imageStream,
+                newImageFileName: imageFileName);
+
+            if (success)
+                NavigationManager.NavigateTo("/admin/commercial-services?updated=1", forceLoad: true);
+            else
+            {
+                _errorMessage = error;
+                _isSubmitting = false;
+            }
+        }
+        finally
+        {
+            if (imageStream is not null)
+                await imageStream.DisposeAsync();
+        }
+    }
+}

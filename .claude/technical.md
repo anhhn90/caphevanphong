@@ -164,7 +164,7 @@ public class MyService(ILogger<MyService> logger)
 
 ## Public Area Template Integration
 
-The Public area **must** use the existing static HTML/CSS/JS design from `PublicTemplate/` (**KOPPEE** Bootstrap 4 template). Do **not** replace it with a different CSS framework.
+The Public area **must** use the existing static HTML/CSS/JS design from `UI Templates/PublicTemplate/` (**KOPPEE** Bootstrap 4 template). Do **not** replace it with a different CSS framework.
 
 ### Template Pages
 | File | Purpose |
@@ -239,7 +239,7 @@ wwwroot/public/
 
 ## Admin Area Template Integration
 
-The Admin area **must** use the existing static HTML/CSS/JS design from `AdminTemplate/` (**MacAdmin** Bootstrap 3 template). Do **not** replace it with a different CSS framework.
+The Admin area **must** use the existing static HTML/CSS/JS design from `UI Templates/AdminTemplate/` (**MacAdmin** Bootstrap 3 template). Do **not** replace it with a different CSS framework.
 
 ### Layout Pattern (replicate in `AdminLayout.razor`)
 ```html

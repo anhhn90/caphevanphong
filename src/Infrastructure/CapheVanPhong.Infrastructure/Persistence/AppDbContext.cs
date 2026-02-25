@@ -24,6 +24,7 @@ public class AppDbContext : IdentityDbContext
     public DbSet<CustomerRepresentative> CustomerRepresentatives => Set<CustomerRepresentative>();
     public DbSet<BlogCategory> BlogCategories => Set<BlogCategory>();
     public DbSet<Blog> Blogs => Set<Blog>();
+    public DbSet<CommercialService> CommercialServices => Set<CommercialService>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

@@ -16,7 +16,19 @@
             <div class="navbar-nav ml-auto p-4">
                 <NavLink href="/" class="nav-item nav-link" ActiveClass="active" Match="NavLinkMatch.All">Trang Chủ</NavLink>
                 <NavLink href="/gioi-thieu" class="nav-item nav-link" ActiveClass="active">Giới Thiệu</NavLink>
-                <NavLink href="/dich-vu" class="nav-item nav-link" ActiveClass="active">Dịch Vụ</NavLink>
+                <div class="nav-item dropdown">
+                    <a href="/dich-vu" class="nav-link dropdown-toggle" data-toggle="dropdown">Dịch Vụ</a>
+                    <div class="dropdown-menu text-capitalize">
+                        @foreach (var svc in _commercialServices)
+                        {
+                            <NavLink href="@($"/dich-vu/{svc.Slug}")" class="dropdown-item" ActiveClass="active">@svc.Title</NavLink>
+                        }
+                        @if (!_commercialServices.Any())
+                        {
+                            <span class="dropdown-item text-muted disabled">Sắp có...</span>
+                        }
+                    </div>
+                </div>
                 <NavLink href="/thuc-don" class="nav-item nav-link" ActiveClass="active">Thực Đơn</NavLink>
                 <div class="nav-item dropdown">
                     <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Trang Khác</a>
@@ -70,16 +82,26 @@
 
 @code {
     private List<CapheVanPhong.Domain.Entities.BlogCategory> _blogCategories = [];
+    private List<CapheVanPhong.Domain.Entities.CommercialService> _commercialServices = [];
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             await using var scope = ScopeFactory.CreateAsyncScope();
-            var service = scope.ServiceProvider.GetRequiredService<IBlogCategoryService>();
-            _blogCategories = (await service.GetActiveAsync())
+            var blogCategoryService = scope.ServiceProvider.GetRequiredService<IBlogCategoryService>();
+            _blogCategories = (await blogCategoryService.GetActiveAsync())
                 .OrderBy(c => c.DisplayOrder)
                 .ThenBy(c => c.Name)
+                .ToList();
+        }
+        catch { /* ignore on prerender */ }
+
+        try
+        {
+            await using var scope = ScopeFactory.CreateAsyncScope();
+            var commercialServiceService = scope.ServiceProvider.GetRequiredService<ICommercialServiceService>();
+            _commercialServices = (await commercialServiceService.GetActiveAsync())
                 .ToList();
         }
         catch { /* ignore on prerender */ }

@@ -17,6 +17,7 @@ public static class DependencyInjection
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IBlogCategoryService, BlogCategoryService>();
         services.AddScoped<IBlogService, BlogService>();
+        services.AddScoped<ICommercialServiceService, CommercialServiceService>();
 
         return services;
     }

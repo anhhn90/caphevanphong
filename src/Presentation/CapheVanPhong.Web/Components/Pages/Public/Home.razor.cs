@@ -32,6 +32,10 @@ public class HomeBase : ComponentBase
         if (firstRender)
         {
             await InitializeCarouselAsync();
+        }
+
+        if (Testimonials.Count > 0)
+        {
             await InitializeTestimonialCarouselAsync();
         }
     }
@@ -133,8 +137,9 @@ public class HomeBase : ComponentBase
         try
         {
             await JS.InvokeVoidAsync("eval", @"
-                if (typeof $ !== 'undefined' && $('.testimonial-carousel').length && typeof $.fn.owlCarousel !== 'undefined') {
-                    $('.testimonial-carousel').owlCarousel({
+                var $el = $('.testimonial-carousel');
+                if (typeof $ !== 'undefined' && $el.length && typeof $.fn.owlCarousel !== 'undefined' && !$el.hasClass('owl-loaded')) {
+                    $el.owlCarousel({
                         autoplay: true,
                         smartSpeed: 1500,
                         dots: false,
